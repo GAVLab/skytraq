@@ -410,27 +410,36 @@ bool Skytraq::PollAlmanac(int8_t svid) {
 }
 
 // (CFG-MSG) Set message output rate for specified message
-bool Skytraq::ConfigureMessageRate(uint8_t class_id, uint8_t msg_id,
-        uint8_t rate) {
+bool Skytraq::ConfigureMessagesOutputRate(skytraq::BinaryOutputRate rate, 
+                                        skytraq::DisableEnable meas_time_message, 
+                                        skytraq::DisableEnable raw_meas_message, 
+                                        skytraq::DisableEnable channel_status_message, 
+                                        skytraq::DisableEnable receiver_state_message, 
+                                        skytraq::DisableEnable subframe_buffer_message) {
 	try {
-		CfgMsgRate message;
-		message.header.sync1 = UBX_SYNC_BYTE_1;
-		message.header.sync2 = UBX_SYNC_BYTE_2;
-		message.header.message_class = MSG_CLASS_CFG;
-		message.header.message_id = MSG_ID_CFG_MSG;
-		message.header.payload_length = 3;
-
-		message.message_class = class_id;
-		message.message_id = msg_id;
-		message.rate = rate;
+		ConfigureBinaryOutputRate message;
+		message.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+		message.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+		message.header.payload_length = CONFIGURE_BINARY_OUTPUT_RATE_PAYLOAD_LENGTH;
+		message.message_id = CFG_OUTPUT_RATE;
+		message.binary_output_rate = rate;
+        message.measurement_time = meas_time_message;               //!< (0xDC)
+        message.raw_measurements = raw_meas_message;                //!< (0xDD)
+        message.sv_channel_status = channel_status_message;         //!< (0xDE)
+        message.receiver_state = receiver_state_message;            //!< (0xDF)
+        message.subframe = subframe_buffer_message;                 //!< (0xEO)
+        message.attributes = UPDATE_TO_SRAM;
 
 		unsigned char* msg_ptr = (unsigned char*) &message;
-		calculateCheckSum(msg_ptr + 2, 7, message.checksum);
+		calculateCheckSum(msg_ptr + HEADER_LENGTH, CONFIGURE_BINARY_OUTPUT_RATE_PAYLOAD_LENGTH, message.checksum);
+
+        message.footer.end1 = SKYTRAQ_END_BYTE_1;
+        message.footer.end2 = SKYTRAQ_END_BYTE_2;
 
 		return serial_port_->write(msg_ptr, sizeof(message)) == sizeof(message);
 	} catch (std::exception &e) {
 		std::stringstream output;
-		output << "Error configuring Skytraq message rate: " << e.what();
+		output << "Error in Skytraq::ConfigureMessagesOutputRate(): " << e.what();
 		log_error_(output.str());
 		return false;
 	}

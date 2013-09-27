@@ -105,8 +105,13 @@ public:
          this->time_handler_ = time_handler;
     }
 
-    void SetPortConfiguration();
-    bool ConfigureMessageRate(uint8_t class_id, uint8_t msg_id, uint8_t rate);
+    void SetOutputFormatToBinary();
+    bool ConfigureMessagesOutputRate(skytraq::BinaryOutputRate rate,  
+                                    skytraq::DisableEnable meas_time_message, 
+                                    skytraq::DisableEnable raw_meas_message, 
+                                    skytraq::DisableEnable channel_status_message, 
+                                    skytraq::DisableEnable receiver_state_message, 
+                                    skytraq::DisableEnable subframe_buffer_message);
 
     //////////////////////////////////////////////////////
     // Diagnostic Callbacks
