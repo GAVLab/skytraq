@@ -134,28 +134,6 @@ bool Skytraq::Connect(std::string port, int baudrate) {
 		//std::cout << "Flushing port" << std::endl;
 		serial_port_->flush();
 
-		// stop any incoming data and flush buffers
-		// stop any incoming nmea data
-		//SetPortConfiguration(true,true,false,false);
-		// wait for data to stop cominig in
-		// boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
-		// unsigned char result[5000];
-		// size_t bytes_read;
-		// bytes_read=serial_port_->read(result, 5000);
-	//    std::cout << result << std::endl;
-	//    std::cout << "flushing port" << std::endl;
-	//    // clear serial port buffers
-	//    serial_port_->flush();
-
-		// turn off NMEA messages
-		// ConfigureMessageRate(0x0F, 0x00, 0);
-		//  boost::this_thread::sleep(boost::posix_time::milliseconds(100));
-		// bytes_read=serial_port_->read(result, 5000);
-		// std::cout << result << std::endl;
-		// std::cout << "flushing port" << std::endl;
-		// clear serial port buffers
-		//serial_port_->flush();
-
 		// look for GPS by sending ping and waiting for response
 		if (!Ping()) {
 			std::stringstream output;
@@ -459,51 +437,25 @@ bool Skytraq::ConfigureMessageRate(uint8_t class_id, uint8_t msg_id,
 }
 
 // Set Port Configuration
-void Skytraq::SetPortConfiguration(bool ubx_input, bool ubx_output,
-        bool nmea_input, bool nmea_output) {
+void Skytraq::SetOutputFormatToBinary() {
 	try {
-		CfgPrt message;
+		ConfigureOutputFormat message;
 		//std::cout << sizeof(message) << std::endl;
-		message.header.sync1 = UBX_SYNC_BYTE_1;
-		message.header.sync2 = UBX_SYNC_BYTE_2;
-		message.header.message_class = MSG_CLASS_CFG;
-		message.header.message_id = MSG_ID_CFG_PRT;
-		message.header.payload_length = 20;
+		message.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+		message.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+		message.header.payload_length = CONFIGURE_OUTPUT_FORMAT_PAYLOAD_LENGTH;
+        message.message_id = CFG_OUTPUT_FORMAT;
+        message.type = BINARY_OUTPUT;
+        message.attributes = UPDATE_TO_SRAM_AND_FLASHs;
 
-		message.port_id = 3;          //Port identifier for USB Port (3)
-		message.reserved = 0;
-		message.tx_ready = 0;
-		message.reserved2 = 0;
-		message.reserved3 = 0;
-		message.input_mask = 0;       // Specifies input protocols
-		message.output_mask = 0;      // Specifies output protocols
-		message.reserved4 = 0;
-		message.reserved5 = 0;
+        unsigned char* msg_ptr = (unsigned char*) &message;
+        calculateCheckSum(msg_ptr + HEADER_LENGTH, CONFIGURE_OUTPUT_FORMAT_PAYLOAD_LENGTH,
+                        message.footer.checksum);
 
-		if (ubx_input)
-			message.input_mask = message.input_mask | 0x0001;   // set first bit
-		else
-			message.input_mask = message.input_mask & 0xFFFE;   // clear first bit
+        message.footer.end1 = SKYTRAQ_END_BYTE_1;
+        message.footer.end2 = SKYTRAQ_END_BYTE_2;
 
-		if (nmea_input)
-			message.input_mask = message.input_mask | 0x0002;   // set second bit
-		else
-			message.input_mask = message.input_mask & 0xFFFD;   // clear second bit
-
-		if (ubx_output)
-			message.output_mask = message.output_mask | 0x0001;   // set first bit
-		else
-			message.output_mask = message.output_mask & 0xFFFE;   // clear first bit
-
-		if (nmea_output)
-			message.output_mask = message.output_mask | 0x0002;   // set second bit
-		else
-			message.output_mask = message.output_mask & 0xFFFD;  // clear second bit
-
-		unsigned char* msg_ptr = (unsigned char*) &message;
-		calculateCheckSum(msg_ptr + 2, 27, message.checksum);
-
-		log_info_("Set Port Settings Message Sent");
+		log_info_("ConfigureOutputFormat Message Sent.");
 
 		//printHex((char*) &message, sizeof(message));
 
