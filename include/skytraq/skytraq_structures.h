@@ -37,8 +37,8 @@ namespace skytraq {
 #define ALMANAC_PAYLOAD_LENGTH 28; //!< [bytes]
 #define EPHEMERIS_PAYLOAD_LENGTH 87; //!< [bytes]
 #define MEASUREMENT_TIME_PAYLOAD_LENGTH 10; //!< [bytes]
-#define RECEIVER_NAV_STATUS_PAYLOAD_LENGTH 81 [bytes]
-#define SUBFRAME_BUFFER_DATA_PAYLOAD_LENGTH 33 [bytes]
+#define RECEIVER_NAV_STATUS_PAYLOAD_LENGTH 81 //!< [bytes]
+#define SUBFRAME_BUFFER_DATA_PAYLOAD_LENGTH 33 //!< [bytes]
 
 
 // Payload is transmitted in big endian
@@ -55,7 +55,7 @@ PACK(
         uint8_t sync1;   //!< start of packet first byte (0xB5)
         uint8_t sync2;   //!< start of packet second byte (0x62)
         uint16_t payload_length; //!< length of the payload data
-    };
+    }
 );
 
 PACK(
@@ -64,7 +64,7 @@ PACK(
         uint8_t checksum;
         uint8_t end1;
         uint8_t end2;
-    };
+    }
 );
 
 /*!
@@ -75,7 +75,7 @@ PACK(
 enum DisableEnable {
     DISABLE = 0,
     ENABLE = 1,
-}
+};
 enum OutputAttributes {
     UPDATE_TO_SRAM = 0,
     UPDATE_TO_SRAM_AND_FLASH = 01,
@@ -101,7 +101,7 @@ PACK(
         OutputType type;
         OutputAttributes attributes;
         SkytraqFooter footer;
-    };
+    }
 );
 
 //! (0x12) Configure Binary Measurement Output Rates
@@ -126,7 +126,7 @@ PACK(
         DisableEnable subframe;                 //!< (0xEO)
         OutputAttributes attributes;
         SkytraqFooter footer;
-    };
+    }
 );
 
 //! (0x11) Get Almanac
@@ -137,7 +137,7 @@ PACK(
         uint8_t message_id;     //!< Message ID
         uint8_t prn;            //!< (0 = all SVs),(1-32 = specific SV)
         SkytraqFooter footer;
-    };
+    }
 );
 
 //! (0x30) Get Ephemeris
@@ -148,7 +148,7 @@ PACK(
         uint8_t message_id;     //!< Message ID
         uint8_t prn;            //!< (0 = all SVs),(1-32 = specific SV)
         SkytraqFooter footer;
-    };
+    }
 );
 
 /*!
@@ -167,7 +167,7 @@ PACK(
         uint32_t odm_version;
         uint32_t revision;
         SkytraqFooter footer;
-    };
+    }
 );
 
 //! (0X81) Software CRC
@@ -179,7 +179,7 @@ PACK(
         uint8_t software_type;
         uint16_t crc_value;
         SkytraqFooter footer;
-    };
+    }
 );
 
 //! (0x83) ACK
@@ -189,7 +189,7 @@ PACK(
         SkytraqHeader header;
         uint8_t message_id;
         SkytraqFooter footer;
-    };
+    }
 );
 
 //! (0x84) NACK
@@ -199,7 +199,7 @@ PACK(
         SkytraqHeader header;
         uint8_t message_id;
         SkytraqFooter footer;
-    };
+    }
 );
 
 //! (0x87) Almanac (polled message response)
@@ -207,7 +207,7 @@ PACK(
     struct Word
     {
         uint8_t byte[3];            //!< Bit 1-24 (MSB->LSB)
-    };
+    }
 );
 PACK(
     struct Almanac
@@ -225,7 +225,7 @@ PACK(
         Word word10;
         int16_t issue_week;
         SkytraqFooter footer;
-    };
+    }
 );
 
 //! (0xB1) Ephemeris (polled message response)
@@ -233,7 +233,7 @@ PACK(
     struct Subframe
     {
         Word word[9];       //!< (TLM Word is not included)
-    };
+    }
 );
 PACK(
     struct Ephemeris
@@ -246,7 +246,7 @@ PACK(
         Subframe subframe2;
         Subframe subframe3;
         SkytraqFooter footer;
-    };
+    }
 );
 
 //! (0xDC) Ephemeris (periodic message)
@@ -262,7 +262,7 @@ PACK(
         uint32_t time_of_week;      //!< (0-604799999) [ms]
         uint16_t measurement_period;//!< (1-1000) [ms]
         SkytraqFooter footer;
-    };
+    }
 );
 
 //! (0xDD) Raw Measurements (periodic message)
@@ -282,19 +282,28 @@ PACK(
             // Bit 2 ON = Carrier phase available
             // Bit 3 ON = Cycle slip possible
             // Bit 4 ON = Coherent integration time >= 10 ms
-    };
+    }
 );
 PACK(
     struct RawMeasurements
     {
         SkytraqHeader header;
         uint8_t message_id;                 //!< Message ID
-        uint8_t = issue_of_data;            //!< (0-255)
-        uint8_t = number_of_measurements;
-        ChannelMeasurements[MAX_CHAN];
+        uint8_t issue_of_data;            //!< (0-255)
+        uint8_t number_of_measurements;
+        ChannelMeasurements channel_measurements[MAXCHAN];
         SkytraqFooter footer;
-    };
+    }
 );
+
+enum NavState
+{
+    NO_FIX = 0x00,
+    FIX_PREDICTION = 0x01,
+    FIX_2D = 0x02,
+    FIX_3D = 0x03,
+    FIX_DIFFERENTIAL = 0x04,
+};
 
 //! (0xDF) Receiver Navigation Statues (periodic message)
 PACK(
@@ -320,7 +329,7 @@ PACK(
         float vdop;
         float tdop;
         SkytraqFooter footer;
-    };
+    }
 );
 
 //! (0xE0) Subframe Buffer Data (periodic message)
@@ -342,7 +351,7 @@ PACK(
         Word word9;
         Word word10;
         SkytraqFooter footer;
-    };
+    }
 );
 
 //! Skytraq Protocol Class/Message ID's
