@@ -1,4 +1,4 @@
-#include "skytraq/.h"
+#include "skytraq/skytraq.h"
 #include <iostream>
 
 using namespace std;
@@ -23,7 +23,7 @@ inline void printHex(char *data, int length) {
  * user callback is not set.  Returns the current time from the
  * CPU clock as the number of seconds from Jan 1, 1970
  */
-double DefaultGetTime() {
+inline double DefaultGetTime() {
     boost::posix_time::ptime present_time(
             boost::posix_time::microsec_clock::universal_time());
     boost::posix_time::time_duration duration(present_time.time_of_day());
@@ -168,8 +168,7 @@ bool Skytraq::Ping(int num_attempts) {
             log_info_("Searching for Skytraq receiver...");
             // request version information
 
-            // ask for version
-            PollMessage(MSG_CLASS_MON, MSG_ID_MON_VER);
+            SetOutputFormatBinary();
 
             boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
 
@@ -455,7 +454,7 @@ void Skytraq::SetOutputFormatToBinary() {
 		message.header.payload_length = CONFIGURE_OUTPUT_FORMAT_PAYLOAD_LENGTH;
         message.message_id = CFG_OUTPUT_FORMAT;
         message.type = BINARY_OUTPUT;
-        message.attributes = UPDATE_TO_SRAM_AND_FLASHs;
+        message.attributes = UPDATE_TO_SRAM_AND_FLASH;
 
         unsigned char* msg_ptr = (unsigned char*) &message;
         calculateCheckSum(msg_ptr + HEADER_LENGTH, CONFIGURE_OUTPUT_FORMAT_PAYLOAD_LENGTH,
