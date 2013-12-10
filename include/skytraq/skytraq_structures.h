@@ -26,6 +26,17 @@ namespace skytraq {
 #define SKYTRAQ_END_BYTE_2 0x0A
 
 //! I/O Message Payload Lengths
+#define SYSTEM_RESTART_PAYLOAD_LENGTH 15 //!< [bytes]
+#define QUERY_SOFTWARE_VERSION_PAYLOAD_LENGTH 2 //!< [bytes]
+#define QUERY_SOFTWARE_CRC_VERSION_PAYLOAD_LENGTH 2 //!< [bytes]
+#define CONFIGURE_SERIAL_PORT_PAYLOAD_LENGTH 4 //!< [bytes]
+#define CONFIGURE_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH 3 //!< [bytes]
+#define QUERY_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH 1 //!< [bytes]
+#define CONFIGURE_WAAS_PAYLOAD_LENGTH 3 //!< [bytes]
+#define QUERY_WAAS_PAYLOAD_LENGTH 1 //!< [bytes]
+#define CONFIGURE_NAVIGATION_MODE_PAYLOAD_LENGTH 3 //!< [bytes]
+#define QUERY_NAVIGATION_MODE_PAYLOAD_LENGTH 1 //!< [bytes]
+
 #define CONFIGURE_OUTPUT_FORMAT_PAYLOAD_LENGTH 3 //!< [bytes]
 #define CONFIGURE_BINARY_OUTPUT_RATE_PAYLOAD_LENGTH 8 //!< [bytes]
 #define GET_ALMANAC_PAYLOAD_LENGTH 2 //!< [bytes]
@@ -34,6 +45,7 @@ namespace skytraq {
 #define SOFTWARE_CRC_PAYLOAD_LENGTH 4 //!< [bytes]
 #define ACK_PAYLOAD_LENGTH 2; //!< [bytes]
 #define NACK_PAYLOAD_LENGTH 2; //!< [bytes]
+#define POSITION_UPDATE_RATE_PAYLOAD_LENGTH 2 //!< [bytes]
 #define ALMANAC_PAYLOAD_LENGTH 28; //!< [bytes]
 #define EPHEMERIS_PAYLOAD_LENGTH 87; //!< [bytes]
 #define MEASUREMENT_TIME_PAYLOAD_LENGTH 10; //!< [bytes]
@@ -76,16 +88,84 @@ enum DisableEnable {
     DISABLE = 0,
     ENABLE = 1,
 };
-enum OutputAttributes {
+enum Attributes {
     UPDATE_TO_SRAM = 0,
     UPDATE_TO_SRAM_AND_FLASH = 01,
 };
 
 /*!
  * ------------------------------------------
- * Input Messages
+ * Input System Messages
  * ------------------------------------------
  */
+
+//! (0x01) System Restart
+enum StartMode {
+    NO_MODE_CHANGE = 0x00,
+    HOT_START = 0x01,
+    WARM_START = 0x02,
+    COLD_START = 0x03,
+    TEST_MODE = 0x04,
+};
+PACK(
+    struct SystemRestart
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        StartMode start_mode;
+        uint16_t utc_year;      //!< >=1980
+        uint8_t utc_month;      //!< 1-12
+        uint8_t utc_day;        //!< 1-31
+        uint8_t utc_hour;       //!< 0-23
+        uint8_t utc_minute;     //!< 0-59
+        uint8_t utc_second;     //!< 0-59
+        int16_t latitude;       //!< -9000 to 9000 (>0 North Hem, <0 South Hem) [1/100 deg]
+        int16_t longitude;      //!< -18000 to 18000 (>0 East Hem, <0 West Hem) [1/100 deg]
+        int16_t altitude;       //!< -1000 to 18300 [m]
+        SkytraqFooter footer;
+    }
+);
+
+//! (0x02) Query Software Version
+enum SoftwareType {
+    RESERVED = 0x00,
+    SYSTEM_CODE = 0x01,
+};
+PACK(
+    struct QuerySoftwareVersion
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        SoftwareType software_type;
+        SkytraqFooter footer;
+    }
+);
+
+//! (0x03) Query Software CRC
+PACK(
+    struct QuerySoftwareCrcVersion
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        SoftwareType software_type;
+        SkytraqFooter footer;
+    }
+);
+
+//! (0x05) Configure Serial Port
+PACK(
+
+    struct ConfigureSerialPort
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        uint8_t com_port;
+        uint8_t baudrate;
+            //!< 4800, 9600, 19200, 38400, 57600, 115200
+        Attributes attributes;
+        SkytraqFooter footer;
+    }
+);
 
 //! (0x09) Configure Output Message Format
 enum OutputType {
@@ -99,12 +179,34 @@ PACK(
         SkytraqHeader header;
         uint8_t message_id;     //!< Message ID
         OutputType type;
-        OutputAttributes attributes;
+        Attributes attributes;
         SkytraqFooter footer;
     }
 );
 
-//! (0x12) Configure Binary Measurement Output Rates
+//! (0xE) Configure System Position Update Rate
+PACK(
+    struct ConfigurePositionUpdateRate
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        uint8_t update_rate;
+        Attributes attributes;
+        SkytraqFooter footer;
+    }
+);
+
+//! (0x10) Query Position Update Rate
+PACK(
+    struct QueryPositionUpdateRate
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        SkytraqFooter footer;
+    }
+);
+
+//! (0x12) Configure Binary Measurement Output Rate
 enum BinaryOutputRate {
     ONE_HZ = 0,
     TWO_HZ = 1,
@@ -124,10 +226,16 @@ PACK(
         DisableEnable sv_channel_status;        //!< (0xDE)
         DisableEnable receiver_state;           //!< (0xDF)
         DisableEnable subframe;                 //!< (0xEO)
-        OutputAttributes attributes;
+        Attributes attributes;
         SkytraqFooter footer;
     }
 );
+
+/*!
+ * ------------------------------------------
+ * Input GPS Messages
+ * ------------------------------------------
+ */
 
 //! (0x11) Get Almanac
 PACK(
@@ -151,9 +259,57 @@ PACK(
     }
 );
 
+//! (0x37) Configure WAAS
+PACK(
+    struct ConfigureWAAS
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        DisableEnable enable_waas;
+        Attributes attributes;
+        SkytraqFooter footer;
+    }
+);
+
+//! (0x38) Query WAAS Status
+PACK(
+    struct QueryWAAS
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        SkytraqFooter footer;
+    }
+);
+
+//! (0x3c) Configure Navigation Mode
+enum NavMode {
+    CAR = 0x00,
+    PEDESTRIAN = 0x01,
+};
+PACK(
+    struct ConfigureNavigationMode
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        NavMode nav_mode;
+        Attributes attributes;
+        SkytraqFooter footer;
+    }
+);
+
+//! (0x3d) Query Navigation Mode
+PACK(
+    struct QueryNavigationMode
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        SkytraqFooter footer;
+    }
+);
+
 /*!
  * ------------------------------------------
- * Output Messages
+ * Output System Messages
  * ------------------------------------------
  */
 
@@ -198,6 +354,45 @@ PACK(
     {
         SkytraqHeader header;
         uint8_t message_id;
+        SkytraqFooter footer;
+    }
+);
+
+//! (0x86) Position Update Rate
+PACK(
+    struct PositionUpdateRate
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        uint8_t update_rate; //!< [Hz]
+        SkytraqFooter footer;
+    }
+);
+
+/*!
+ * ------------------------------------------
+ * Output GPS Messages
+ * ------------------------------------------
+ */
+
+//! (0xB3) GPS WAAS Status
+PACK(
+    struct WaasStatus
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        DisableEnable waas_status;
+        SkytraqFooter footer;
+    }
+);
+
+//! (0xB5) Navigation Mode
+PACK(
+    struct NavigationMode
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        NavigationMode nav_mode;
         SkytraqFooter footer;
     }
 );
@@ -358,17 +553,30 @@ PACK(
 enum Message_ID
 {
     //! Input System Messages
+    SYSTEM_RESTART = 1,         //!< (0x01) Force system restart
+    QUERY_SOFTWARE_VERSION = 2, //!< (0x02) Query revision information about software
+    QUERY_SOFTWARE_CRC = 3,     //!< (0x03) Query software CRC
+    CFG_SERIAL_PORT = 5,        //!< (0x05) Configure serial port
     CFG_OUTPUT_FORMAT = 9,      //!< (0x09) Configure Output Message Format
+    CFG_POS_UPDATE_RATE = 14,   //!< (0x0E) Configure the position update rate
+    QUERY_POS_UPDATE_RATE = 16, //!< (0X10) Query the position update rate
     CFG_OUTPUT_RATE = 18,       //!< (0x12) Configure Binary Measurement Output Rates
     //! Input GPS Messages
     GET_ALMANAC = 17,           //!< (0x11) Retrieve almanac data from receiver
     GET_EPHEMERIS = 48,         //!< (0x30) Retrieve ephemeris data from receiver
+    CFG_WAAS = 55,              //!< (0x37) Configure the enable/disable of WAAS
+    QUERY_WAAS = 56,            //!< (0x38) Query WAAS status
+    CFG_NAV_MODE = 60,          //!< (0x3C) Configure Navigation mode of GPS
+    QUERY_NAV_MODE = 61,        //!< (0x3D) Query navigation mode
     //! Output System Messages
     SOFTWARE_VERSION = 128,     //!< (0x80) Software version of the receiver
     SOFTWARE_CRC = 129,         //!< (0x81) Software CRC of the receiver
     ACK = 131,                  //!< (0x83) ACK to successful input message
     NACK = 132,                 //!< (0x84) NACK to unsuccessful input message
+    POS_UPDATE_RATE = 134,      //!< (0X86) Position update rate of GPS system
     //! Output GPS Messages
+    GPS_WAAS_STATUS = 179,      //!< (0xB3) GPS WAAS status
+    GPS_NAV_MODE = 180,         //!< (0xB5) GPS Navigation mode
     GPS_ALMANAC = 134,          //!< (0x87) GPS Almanac data
     GPS_EPHEMERIS = 177,        //!< (0xB1) GPS Ephemeris data
     MEAS_TIME = 220,            //!< (0xDC) Measurement time information

@@ -114,7 +114,7 @@ public:
                                     skytraq::DisableEnable subframe_buffer_message);
 
     bool ConfigureOutputFormat(skytraq::OutputType output_protocol,
-                               skytraq::OutputAttributes attributes=UPDATE_TO_SRAM_AND_FLASH);
+                               skytraq::Attributes attributes=UPDATE_TO_SRAM_AND_FLASH);
     void SetOutputFormatBinary();
 
     //////////////////////////////////////////////////////
