@@ -66,6 +66,10 @@ inline void DefaultEphemerisCallback(Ephemeris& ephemeris, double& timestamp){
 
 }
 
+inline void DefaultAlmanacCallback(Almanac& almanac, double& timestamp){
+
+}
+
 inline void DefaultRawMeasurementCallback(RawMeasurements& raw_measurements, double& timestamp){
 
 }
@@ -191,8 +195,8 @@ bool Skytraq::Ping(int num_attempts) {
             // search through result for version message
             for (int ii = 0; ii < (bytes_read - 8); ii++) {
                 //std::cout << hex << (unsigned int)result[ii] << std::endl;
-                if (result[ii] == UBX_SYNC_BYTE_1) {
-                    if (result[ii + 1] != UBX_SYNC_BYTE_2)
+                if (result[ii] == SKYTRAQ_SYNC_BYTE_1) {
+                    if (result[ii + 1] != SKYTRAQ_SYNC_BYTE_2)
                         continue;
                     if (result[ii + 2] != MSG_CLASS_MON)
                         continue;
@@ -369,22 +373,42 @@ bool Skytraq::PollMessageIndSV(uint8_t class_id, uint8_t msg_id, uint8_t svid) {
 }
 
 // (AID-EPH) Polls for Ephemeris data
-bool Skytraq::PollEphem(int8_t svid) {
+bool Skytraq::PollEphem(uint8_t svid) {
 
-    if (svid < -1) {
+    if (svid < 0) {
         log_error_("Error in PollEphem: Invalid input 'svid'");
-        return 0;
-    } else if (svid == -1) { // Requests Ephemerides for all SVs
-        log_debug_("Polling for all Ephemerides..");
-        return PollMessage(MSG_CLASS_AID, MSG_ID_AID_EPH);
-    } else if (svid > 0) { // Requests Ephemeris for a single SV
-        stringstream output;
-        output << "Polling for SV# " << (int) svid << " Ephemeris..";
-        log_debug_(output.str());
-        return PollMessageIndSV(MSG_CLASS_AID, MSG_ID_AID_EPH, (uint8_t) svid);
+        return false;
+    } else if (svid <= MAX_SAT) { // Requests Ephemerides for all SVs
+        if (svid == 0) {
+            log_debug_("Polling for all Ephemerides..");
+        } else {
+            stringstream output;
+            output << "Polling for SV# " << (int) svid << " ephemeris.";
+            log_debug_(output.str());
+        }
+        GetEphemeris get_ephem;
+
+        get_ephem.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        get_ephem.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        get_ephem.header.payload_length = GET_EPHEMERIS_PAYLOAD_LENGTH;
+        get_ephem.message_id = GET_EPHEMERIS;
+        get_ephem.prn = svid;   
+        get_ephem.footer.checksum = 0;
+
+        uint8_t* msg_ptr = (uint8_t*) &get_ephem.message_id;
+        calculateCheckSum(msg_ptr, GET_EPHEMERIS_PAYLOAD_LENGTH,
+                          &get_ephem.footer.checksum);
+        
+        get_ephem.footer.end1 = SKYTRAQ_END_BYTE_1;
+        get_ephem.footer.end2 = SKYTRAQ_END_BYTE_2;
+        
+        return SendMessage(msg_ptr, HEADER_LENGTH 
+                                    + GET_EPHEMERIS_PAYLOAD_LENGTH 
+                                    + FOOTER_LENGTH);
+
     } else {
-        log_error_("Error in PollEphem: Invalid input 'svid'");
-        return 0;
+        log_error_("In Skytraq::PollEphem(): Invalid input 'svid'");
+        return false;
     }
 }
 
@@ -430,7 +454,9 @@ bool Skytraq::ConfigureMessagesOutputRate(skytraq::BinaryOutputRate rate,
         message.attributes = UPDATE_TO_SRAM;
 
 		unsigned char* msg_ptr = (unsigned char*) &message;
-		calculateCheckSum(msg_ptr + HEADER_LENGTH, CONFIGURE_BINARY_OUTPUT_RATE_PAYLOAD_LENGTH, message.checksum);
+		calculateCheckSum(msg_ptr + HEADER_LENGTH, 
+                          CONFIGURE_BINARY_OUTPUT_RATE_PAYLOAD_LENGTH, 
+                          &message.footer.checksum);
 
         message.footer.end1 = SKYTRAQ_END_BYTE_1;
         message.footer.end2 = SKYTRAQ_END_BYTE_2;
@@ -475,33 +501,33 @@ void Skytraq::SetOutputFormatToBinary() {
 	}
 }
 
-// Poll Port Configuration
-void Skytraq::PollPortConfiguration(uint8_t port_identifier)
-{ // Port identifier = 3 for USB (default value if left blank)
-  //                 = 1 or 2 for UART
-	try {
-		uint8_t message[9];
-		message[0]=UBX_SYNC_BYTE_1;
-		message[1]=UBX_SYNC_BYTE_2;
-		message[2]=MSG_CLASS_CFG;
-		message[3]=MSG_ID_CFG_PRT;
-		message[4]=1;
-		message[5]=0;
-		message[6]=port_identifier;         //Port identifier for USB Port (3)
-		message[7]=0;                       // Checksum A
-		message[8]=0;                       // Checksum B
+// // Poll Port Configuration
+// void Skytraq::PollPortConfiguration(uint8_t port_identifier)
+// { // Port identifier = 3 for USB (default value if left blank)
+//   //                 = 1 or 2 for UART
+// 	try {
+// 		uint8_t message[9];
+// 		message[0]=UBX_SYNC_BYTE_1;
+// 		message[1]=UBX_SYNC_BYTE_2;
+// 		message[2]=MSG_CLASS_CFG;
+// 		message[3]=MSG_ID_CFG_PRT;
+// 		message[4]=1;
+// 		message[5]=0;
+// 		message[6]=port_identifier;         //Port identifier for USB Port (3)
+// 		message[7]=0;                       // Checksum A
+// 		message[8]=0;                       // Checksum B
 
-		unsigned char* msg_ptr = (unsigned char*)&message;
-		calculateCheckSum(msg_ptr+2,5,msg_ptr+7);
+// 		unsigned char* msg_ptr = (unsigned char*)&message;
+// 		calculateCheckSum(msg_ptr+2,5,msg_ptr+7);
 
-		serial_port_->write(msg_ptr, sizeof(message));
-		log_info_("Polling for Port Protocol Configuration.");
-	} catch (std::exception &e) {
-		std::stringstream output;
-		output << "Error polling Skytraq port configuration: " << e.what();
-		log_error_(output.str());
-	}
-}
+// 		serial_port_->write(msg_ptr, sizeof(message));
+// 		log_info_("Polling for Port Protocol Configuration.");
+// 	} catch (std::exception &e) {
+// 		std::stringstream output;
+// 		output << "Error polling Skytraq port configuration: " << e.what();
+// 		log_error_(output.str());
+// 	}
+// }
 
 //////////////////////////////////////////////////////////////
 // Functions to  Aiding Data to Receiver
@@ -775,21 +801,14 @@ void Skytraq::ParseLog(uint8_t *log, size_t logID) {
 	}
 } // end ParseLog()
 
-void Skytraq::calculateCheckSum(uint8_t* in, size_t length, uint8_t* out) {
+void Skytraq::calculateCheckSum(uint8_t* in, size_t length, uint8_t* cs) {
 
 	try {
-		uint8_t a = 0;
-		uint8_t b = 0;
-
+		uint8_t sum = 0;
 		for (uint8_t i = 0; i < length; i++) {
-
-			a = a + in[i];
-			b = b + a;
-
+			sum = sum ^ in[i];
 		}
-
-		out[0] = (a & 0xFF);
-		out[1] = (b & 0xFF);
+        cs[0] = sum;
 	} catch (std::exception &e) {
 		std::stringstream output;
 		output << "Error calculating Skytraq checksum: " << e.what();

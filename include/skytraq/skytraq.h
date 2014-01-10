@@ -105,7 +105,6 @@ public:
          this->time_handler_ = time_handler;
     }
 
-    void SetOutputFormatToBinary();
     bool ConfigureMessagesOutputRate(skytraq::BinaryOutputRate rate,  
                                     skytraq::DisableEnable meas_time_message, 
                                     skytraq::DisableEnable raw_meas_message, 
@@ -136,7 +135,7 @@ public:
     //////////////////////////////////////////////////////
     bool PollMessage(uint8_t class_id, uint8_t msg_id);
     bool PollMessageIndSV(uint8_t class_id, uint8_t msg_id, uint8_t svid);
-    bool PollEphem(int8_t svid = -1);
+    bool PollEphem(uint8_t svid = 0);
     bool PollAlmanac(int8_t svid = -1);
 
     //////////////////////////////////////////////////////
@@ -157,7 +156,7 @@ public:
     void set_receiver_nav_status_callback_(ReceiverNavStatusCallback callback){receiver_nav_status_callback_=callback;};
     void set_subframe_buffer_data_callback_(SubframeBufferDataCallback callback){subframe_buffer_data_callback_=callback;};
 
-    void calculateCheckSum(uint8_t* in, size_t length, uint8_t* out);
+    void calculateCheckSum(uint8_t* in, size_t length, uint8_t* cs);
 private:
 
 	/*!
