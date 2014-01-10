@@ -392,7 +392,7 @@ PACK(
     {
         SkytraqHeader header;
         uint8_t message_id;
-        NavigationMode nav_mode;
+        NavMode nav_mode;
         SkytraqFooter footer;
     }
 );
