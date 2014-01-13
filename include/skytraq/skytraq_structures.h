@@ -301,6 +301,32 @@ PACK(
     }
 );
 
+//! (0x31) Set Ephemeris
+PACK(
+    struct Word
+    {
+        uint8_t byte[3];            //!< Bit 1-24 (MSB->LSB)
+    }
+);
+PACK(
+    struct Subframe
+    {
+        Word word[9];       //!< (TLM Word is not included)
+    }
+);
+PACK(
+    struct SetEphemeris
+    {
+        SkytraqHeader header;
+        uint8_t message_id;         //!< Message ID
+        uint16_t svid;
+        Subframe subframe1;
+        Subframe subframe2;
+        Subframe subframe3;
+        SkytraqFooter footer;
+    }
+);
+
 //! (0x37) Configure WAAS
 PACK(
     struct ConfigureWAAS
@@ -441,12 +467,6 @@ PACK(
 
 //! (0x87) Almanac (polled message response)
 PACK(
-    struct Word
-    {
-        uint8_t byte[3];            //!< Bit 1-24 (MSB->LSB)
-    }
-);
-PACK(
     struct Almanac
     {
         SkytraqHeader header;
@@ -466,12 +486,6 @@ PACK(
 );
 
 //! (0xB1) Ephemeris (polled message response)
-PACK(
-    struct Subframe
-    {
-        Word word[9];       //!< (TLM Word is not included)
-    }
-);
 PACK(
     struct Ephemeris
     {
