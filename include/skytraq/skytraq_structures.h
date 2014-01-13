@@ -491,6 +491,40 @@ PACK(
     }
 );
 
+//! (0xDE) SV and Channel status info (peiodic message)
+PACK(
+    struct ChannelInfo
+    {
+        uint8_t channel_id;                 //!< ID # (0-11)
+        uint8_t prn;
+        uint8_t sv_status_indicator;        //!< bit 0 ON: Almanac received (LSB)
+                                            //!< bit 1 ON: Ephemeris received
+                                            //!< bit 2 ON: SV is healthy
+        uint8_t ura;                        //!< User Range Accuracy
+        int8_t cno;                         //!< Carrier/Noise Ratio (dBHz)
+        int16_t elevation;                  //!< SV elevation (deg)
+        int16_t azimuth;                    //!< SV Azimuth (deg)
+        uint8_t channel_status_indicator;   //!< bit 0 ON: Pull in stage is done (LSB)
+                                            //!< bit 1 ON: Bit synch is done
+                                            //!< bit 2 ON: Frame sync is done
+                                            //!< bit 3 ON: Ephemeris received
+                                            //!< bit 4 ON: Used in normal fix mode
+                                            //!< bit 5 ON: Used in differential fix mode
+    }
+);
+
+PACK(
+    struct ChannelStatus
+    {
+        SkytraqHeader header;
+        uint8_t message_id;                 //!< Message ID
+        uint8_t issue_of_data;              //!< (0-255)
+        uint8_t number_of_svs;              
+        ChannelInfo channel_info[MAXCHAN];  
+        SkytraqFooter footer;
+    }
+);
+
 enum NavState
 {
     NO_FIX = 0x00,
