@@ -591,14 +591,18 @@ enum Message_ID
     SYSTEM_RESTART = 1,         //!< (0x01) Force system restart
     QUERY_SOFTWARE_VERSION = 2, //!< (0x02) Query revision information about software
     QUERY_SOFTWARE_CRC = 3,     //!< (0x03) Query software CRC
+    SET_FACTORY_DEFAULTS = 4,   //!< (0X04) Set system to factory default values
     CFG_SERIAL_PORT = 5,        //!< (0x05) Configure serial port
+    CFG_NMEA = 8,               //!< (0x08) Configure NMEA output message
     CFG_OUTPUT_FORMAT = 9,      //!< (0x09) Configure Output Message Format
+    CFG_POWER_MODE = 12,        //!< (0x0C) Set the system power mode
     CFG_POS_UPDATE_RATE = 14,   //!< (0x0E) Configure the position update rate
     QUERY_POS_UPDATE_RATE = 16, //!< (0X10) Query the position update rate
     CFG_OUTPUT_RATE = 18,       //!< (0x12) Configure Binary Measurement Output Rates
     //! Input GPS Messages
     GET_ALMANAC = 17,           //!< (0x11) Retrieve almanac data from receiver
     GET_EPHEMERIS = 48,         //!< (0x30) Retrieve ephemeris data from receiver
+    SET_EPHEMERIS = 49,         //!< (0x31) Set ephemeris data to receiver
     CFG_WAAS = 55,              //!< (0x37) Configure the enable/disable of WAAS
     QUERY_WAAS = 56,            //!< (0x38) Query WAAS status
     CFG_NAV_MODE = 60,          //!< (0x3C) Configure Navigation mode of GPS
