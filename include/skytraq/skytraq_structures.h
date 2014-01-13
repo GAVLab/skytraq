@@ -152,6 +152,17 @@ PACK(
     }
 );
 
+//! (0x04) Set to Factory Defaults
+PACK(
+    struct RestoreFactoryDefaults
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        uint8_t type;           //!< = 0x01
+        SkytraqFooter footer;
+    }
+);
+
 //! (0x05) Configure Serial Port
 PACK(
 
