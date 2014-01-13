@@ -525,6 +525,8 @@ PACK(
     }
 );
 
+
+//! (0xDF) Receiver Navigation Statues (periodic message)
 enum NavState
 {
     NO_FIX = 0x00,
@@ -534,7 +536,6 @@ enum NavState
     FIX_DIFFERENTIAL = 0x04,
 };
 
-//! (0xDF) Receiver Navigation Statues (periodic message)
 PACK(
     struct ReceiverNavStatus
     {
