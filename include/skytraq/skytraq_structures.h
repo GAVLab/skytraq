@@ -178,6 +178,25 @@ PACK(
     }
 );
 
+//! (0x08) Configure NMEA Message Intervals
+PACK(
+    struct ConfigureNmeaIntervals
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        uint8_t gga_interval;               //!< [sec]
+        uint8_t gsa_interval;               //!< [sec]
+        uint8_t gsv_interval;               //!< [sec]
+        uint8_t gll_interval;               //!< [sec]
+        uint8_t rcm_interval;               //!< [sec]
+        uint8_t vtg_interval;               //!< [sec]
+        uint8_t zda_interval;               //!< [sec]
+            //!< All intervals: 0-255 sec, 0=disable
+        Attributes attributes;              
+        SkytraqFooter footer;
+    }
+);
+
 //! (0x09) Configure Output Message Format
 enum OutputType {
     NO_OUTPUT = 0,
@@ -604,7 +623,7 @@ enum Message_ID
     QUERY_SOFTWARE_CRC = 3,     //!< (0x03) Query software CRC
     SET_FACTORY_DEFAULTS = 4,   //!< (0X04) Set system to factory default values
     CFG_SERIAL_PORT = 5,        //!< (0x05) Configure serial port
-    CFG_NMEA = 8,               //!< (0x08) Configure NMEA output message
+    CFG_NMEA = 8,               //!< (0x08) Configure NMEA output message time intervals
     CFG_OUTPUT_FORMAT = 9,      //!< (0x09) Configure Output Message Format
     CFG_POWER_MODE = 12,        //!< (0x0C) Set the system power mode
     CFG_POS_UPDATE_RATE = 14,   //!< (0x0E) Configure the position update rate
