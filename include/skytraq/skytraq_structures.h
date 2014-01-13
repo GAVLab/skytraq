@@ -64,8 +64,8 @@ namespace skytraq {
 PACK(
     struct SkytraqHeader 
     {
-        uint8_t sync1;   //!< start of packet first byte (0xB5)
-        uint8_t sync2;   //!< start of packet second byte (0x62)
+        uint8_t sync1;   //!< start of packet first byte (0xA0)
+        uint8_t sync2;   //!< start of packet second byte (0xA1)
         uint16_t payload_length; //!< length of the payload data
     }
 );
@@ -263,11 +263,11 @@ PACK(
         SkytraqHeader header;
         uint8_t message_id;                     //!< Message ID
         BinaryOutputRate binary_output_rate;
-        DisableEnable measurement_time;         //!< (0xDC)
-        DisableEnable raw_measurements;         //!< (0xDD)
-        DisableEnable sv_channel_status;        //!< (0xDE)
-        DisableEnable receiver_state;           //!< (0xDF)
-        DisableEnable subframe;                 //!< (0xEO)
+        DisableEnable measurement_time;         //!< GPS Output Message (0xDC)
+        DisableEnable raw_measurements;         //!< GPS Output Message (0xDD)
+        DisableEnable sv_channel_status;        //!< GPS Output Message (0xDE)
+        DisableEnable receiver_state;           //!< GPS Output Message (0xDF)
+        DisableEnable subframe;                 //!< GPS Output Message (0xEO)
         Attributes attributes;
         SkytraqFooter footer;
     }

@@ -146,12 +146,21 @@ public:
     bool SendAidEphem(Ephemerides ephems);
     bool SendAidAlm(Almanac almanac);
 
+    //////////////////////////////////////////////////////
+    // Set Callback Methods
+    //////////////////////////////////////////////////////
+    //! System Output Message Callbacks
     void set_software_version_callback_(SoftwareVersionCallback callback){software_version_callback_=callback;};
     void set_software_crc_callback_(SoftwareCRCCallback callback){software_crc_callback_=callback;};
     void set_ack_callback_(AckCallback callback){ack_callback_=callback;};
     void set_nack_callback_(NackCallback callback){nack_callback_=callback;};
+    void set_pos_update_rate_callback_(PositionUpdateRateCallback callback){pos_update_rate_callback_=callback};
+    //! GPS Output Message Callbacks
+    void set_waas_status_callback_(WaasStatusCallback callback){waas_status_callback_=callback};
+    void set_nav_mode_callback_(NavigationModeCallback callback){nav_mode_callback_=callback};
     void set_almanac_callback_(AlmanacCallback callback){almanac_callback_=callback;};
     void set_ephemeris_callback_(EphemerisCallback callback){ephemeris_callback_=callback;};
+    void set_measurement_time_callback_(MeasurementTimeCallback callback){measurement_time_callback_=callback;};;
     void set_raw_measurement_callback_(RawMeasurementsCallback callback){raw_measurement_callback_=callback;};
     void set_receiver_nav_status_callback_(ReceiverNavStatusCallback callback){receiver_nav_status_callback_=callback;};
     void set_subframe_buffer_data_callback_(SubframeBufferDataCallback callback){subframe_buffer_data_callback_=callback;};
@@ -203,18 +212,24 @@ private:
 
 
     //////////////////////////////////////////////////////
-    // New Data Callbacks
+    // Data Callbacks
     //////////////////////////////////////////////////////
+    //! System Output Message Callbacks
     SoftwareVersionCallback software_version_callback_;
     SoftwareCRCCallback software_crc_callback_;
     AckCallback ack_callback_;
     NackCallback nack_callback_;
+    PositionUpdateRateCallback pos_update_rate_callback_;
+    //! GPS Output Message Callbacks
+    WaasStatusCallback waas_status_callback_;
+    NavigationModeCallback nav_mode_callback_;
     AlmanacCallback almanac_callback_;
     EphemerisCallback ephemeris_callback_;
+    MeasurementTimeCallback measurement_time_callback_;
     RawMeasurementsCallback raw_measurement_callback_;
     ReceiverNavStatusCallback receiver_nav_status_callback_;
     SubframeBufferDataCallback subframe_buffer_data_callback_;
-	
+
 	//////////////////////////////////////////////////////
 	// Incoming data buffers
 	//////////////////////////////////////////////////////

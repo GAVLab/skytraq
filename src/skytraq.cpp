@@ -30,6 +30,7 @@ inline double DefaultGetTime() {
     return duration.total_seconds();
 }
 
+//! Logging Default Callbacks
 inline void DefaultDebugMsgCallback(const std::string &msg) {
     std::cout << "Skytraq Debug: " << msg << std::endl;
 }
@@ -46,6 +47,8 @@ inline void DefaultErrorMsgCallback(const std::string &msg) {
     std::cout << "Skytraq Error: " << msg << std::endl;
 }
 
+
+//! System Output Message Default Callbacks
 inline void DefaultSoftwareVersionCallback(SoftwareVersion& software_version, double& timestamp){
 
 }
@@ -62,11 +65,29 @@ inline void DefaultNackCallback(Nack& nack, double& timestamp){
 
 }
 
-inline void DefaultEphemerisCallback(Ephemeris& ephemeris, double& timestamp){
+inline void DefaultPosUpdateRateCallback(PositionUpdateRate& pos_update_rate, double& timestamp){
+
+}
+
+
+//! GPS Output Message Default Callbacks
+inline void DefaultWaasStatusCallback(WaasStatus& waas_status, double& timestamp){
+
+}
+
+inline void DefaultNavigationModeCallback(NavigationMode& nav_mode, double& timestamp){
 
 }
 
 inline void DefaultAlmanacCallback(Almanac& almanac, double& timestamp){
+
+}
+
+inline void DefaultEphemerisCallback(Ephemeris& ephemeris, double& timestamp){
+
+}
+
+inline void DefaultMeasurementTimeCallback(MeasurementTime& measurement_time, double& timestamp){
 
 }
 
@@ -82,20 +103,28 @@ inline void DefaultSubframeBufferDataCallback(SubframeBufferData& subframe_buffe
 
 }
 
+
 Skytraq::Skytraq() {
     serial_port_ = NULL;
     reading_status_ = false;
     time_handler_ = DefaultGetTime;
+    //! Logging Callbacks
     log_debug_ = DefaultDebugMsgCallback;
     log_info_ = DefaultInfoMsgCallback;
     log_warning_ = DefaultWarningMsgCallback;
     log_error_ = DefaultErrorMsgCallback;
+    //! System Output Message Callbacks
     software_version_callback_ = DefaultSoftwareVersionCallback;
     software_crc_callback_ = DefaultSoftwareCrcCallback;
     ack_callback_ = DefaultAckCallback;
     nack_callback_ = DefaultNackCallback;
+    pos_update_rate_callback_ = DefaultPosUpdateRateCallback;
+    //! GPS Output Message Callbacks
+    waas_status_callback_ = DefaultWaasStatusCallback;
+    nav_mode_callback_ = DefaultNavigationModeCallback;
     almanac_callback_ = DefaultAlmanacCallback;
     ephemeris_callback_ = DefaultEphemerisCallback;
+    measurement_time_callback_ = DefaultMeasurementTimeCallback;
     raw_measurement_callback_ = DefaultRawMeasurementCallback;
     receiver_nav_status_callback_ = DefaultNavStatusCallback;
     subframe_buffer_data_callback_ = DefaultSubframeBufferDataCallback;
