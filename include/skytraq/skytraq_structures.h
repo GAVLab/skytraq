@@ -214,6 +214,18 @@ PACK(
     }
 );
 
+//! (0x0C) Configure Power Mode
+PACK(
+    struct ConfigurePowerSaveMode
+    {
+        SkytraqHeader header;
+        uint8_t message_id;             //!< Message ID
+        DisableEnable power_save_mode;
+        Attributes attributes;
+        SkytraqFooter footer;
+    }
+);
+
 //! (0xE) Configure System Position Update Rate
 PACK(
     struct ConfigurePositionUpdateRate
