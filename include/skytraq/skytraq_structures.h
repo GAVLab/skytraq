@@ -444,7 +444,7 @@ PACK(
     }
 );
 
-//! (0xDC) Ephemeris (periodic message)
+//! (0xDC) Measurement time info (periodic message)
     // Contains time information on when the raw GPS 
     // measurement is taken.
 PACK(
