@@ -818,10 +818,39 @@ void Skytraq::ParseLog(uint8_t *log, size_t logID) {
 
 		switch (logID) {
 
-		case AID_REQ: // Receiver outputs if accurate internally stored pos and time aren't available
+        //! Output System Messages
+		case SOFTWARE_VERSION: // Receiver outputs if accurate internally stored pos and time aren't available
 			log_info_("AID-REQ message received by computer.");
 			break;
+        case SOFTWARE_CRC:
+            break;
+        case ACK:
+            break;
+        case NACK:
+            break;
+        case POS_UPDATE_RATE:
+            break;
 
+        //! Output GPS Messages
+        case GPS_WAAS_STATUS:
+            break;
+        case GPS_NAV_MODE:
+            break;
+        case GPS_ALMANAC:
+            break;
+        case GPS_EPHEMERIS:
+            break;
+        case MEAS_TIME:
+            break;
+        case RAW_MEAS:
+            break;
+        case SV_CH_STATUS:
+            break;
+        case RCV_STATE:
+            break;
+        case SUBFRAME:
+            break;
+        
 		} // end switch (logID)
 	} catch (std::exception &e) {
 		std::stringstream output;
