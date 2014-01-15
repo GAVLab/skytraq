@@ -697,7 +697,6 @@ bool Skytraq::SendAidAlm(Almanac almanac) {
 //
 //////////////////////////////////////////////////////////////
 void Skytraq::BufferIncomingData(uint8_t *msg, size_t length) {
-    //MOOSTrace("Inside BufferIncomingData\n");
     //cout << length << endl;
     //cout << 0 << ": " << dec << (int)msg[0] << endl;
     // add incoming data to buffer
@@ -711,101 +710,46 @@ void Skytraq::BufferIncomingData(uint8_t *msg, size_t length) {
 			if (buffer_index_ >= MAX_NOUT_SIZE) {
 				buffer_index_ = 0;
 				log_warning_(
-						"Overflowed receiver buffer. See Skytraq.cpp BufferIncomingData");
+						"Overflowed receiver buffer. See Skytraq::BufferIncomingData()");
 
 			}
 			//cout << "buffer_index_ = " << buffer_index_ << endl;
 
 			if (buffer_index_ == 0) {	// looking for beginning of message
-				if (msg[i] == UBX_SYNC_BYTE_1) {	// beginning of msg found - add to buffer
+				if (msg[i] == SKYTRAQ_SYNC_BYTE_1) {	// beginning of msg found - add to buffer
 										//cout << "got first bit" << endl;
 					data_buffer_[buffer_index_++] = msg[i];
-					bytes_remaining_ = 0;
 				}	// end if (msg[i]
-			} // end if (buffer_index_==0)
-			else if (buffer_index_ == 1) {	// verify 2nd character of header
-				if (msg[i] == UBX_SYNC_BYTE_2) {	// 2nd byte ok - add to buffer
+			} 
+            else if (buffer_index_ == 1) {	// verify 2nd character of header
+				if (msg[i] == SKYTRAQ_SYNC_BYTE_2) {	// 2nd byte ok - add to buffer
 										//cout << " got second synch bit" << endl;
 					data_buffer_[buffer_index_++] = msg[i];
 				} else {
 					// start looking for new message again
 					buffer_index_ = 0;
-					bytes_remaining_ = 0;
 					//readingACK=false;
 				} // end if (msg[i]==UBX_SYNC_BYTE_2)
-			}	// end else if (buffer_index_==1)
-			else if (buffer_index_ == 2) {	//look for ack
-
-				if (msg[i] == MSG_CLASS_ACK)   // ACK or NAK message class
-						{
-					// Get message id from payload
-					char* class_id = reinterpret_cast<char*>(msg[i + 4]);
-					char* msg_id = reinterpret_cast<char*>(msg[i + 5]);
-
-					// Add function which takes class_id and msg_id and returns name of corresponding message
-
-					if (msg[i + 1] == MSG_ID_ACK_ACK) // ACK Message
-							{
-						//std::cout << "Receiver Acknowledged Message " << std::endl;
-						//printf("0x%.2X ", (unsigned)class_id);
-						//std::cout << " ";
-						//printf("0x%.2X ", (unsigned)msg_id);
-						//std::cout << endl;
-
-					}
-
-					else if (msg[i + 1] == MSG_ID_ACK_NAK)    // NAK Message
-							{
-						//std::cout << "Receiver Did Not Acknowledged Message " << std::endl;
-						//printf("0x%.2X ", (unsigned)class_id);
-						//std::cout << " ";
-						//printf("0x%.2X ", (unsigned)msg_id);
-						//std::cout << endl;
-					}
-
-					buffer_index_ = 0;
-					bytes_remaining_ = 0;
-					//readingACK = false;			//? Why is readingACK = false in if & else statement? - CC
-				} else {
-					data_buffer_[buffer_index_++] = msg[i];
-					//readingACK = false;
-				}
-			} else if (buffer_index_ == 3) {
-				// msg[i] and msg[i-1] define message ID
+				// end else if (buffer_index_==1)
+			} 
+            else if (buffer_index_ == 4) {
+				// msg[i] defines message ID
 				data_buffer_[buffer_index_++] = msg[i];
-				// length of header is in byte 4
-
 				//printHex(reinterpret_cast < char * > (data_buffer_),4);
-
-				msgID = ((data_buffer_[buffer_index_ - 2]) << 8)
-						+ data_buffer_[buffer_index_ - 1];
+				msgID = data_buffer_[buffer_index_ - 1];
 				//cout << "msgID = " << msgID << endl;
-			} else if (buffer_index_ == 5) {
-				// add byte to buffer
-				data_buffer_[buffer_index_++] = msg[i];
-				// length of message (payload + 2 byte check sum )
-				bytes_remaining_ = ((data_buffer_[buffer_index_ - 1]) << 8)
-						+ data_buffer_[buffer_index_ - 2] + 2;
-
-				//cout << "bytes_remaining_ = " << bytes_remaining_ << endl;
-
-				///cout << msgID << endl;
-			} else if (buffer_index_ == 6) {	// set number of bytes
-				data_buffer_[buffer_index_++] = msg[i];
-				bytes_remaining_--;
-			} else if (bytes_remaining_ == 1) {	// add last byte and parse
+			} 
+            else if ((msg[i-1]==SKYTRAQ_END_BYTE_1)&&(msg[i]==SKYTRAQ_END_BYTE_2)) {
 				data_buffer_[buffer_index_++] = msg[i];
 				//std::cout << hex << (int)msg[i] << dec << std::endl;
 				//cout << " msgID = " << msgID << std::endl;
 				ParseLog(data_buffer_, msgID);
 				// reset counters
 				buffer_index_ = 0;
-				bytes_remaining_ = 0;
 				//cout << "Message Done." << std::endl;
-			}  // end else if (bytes_remaining_==1)
+			}
 			else {	// add data to buffer
 				data_buffer_[buffer_index_++] = msg[i];
-				bytes_remaining_--;
 			}
 		}	// end for
 	} catch (std::exception &e) {
