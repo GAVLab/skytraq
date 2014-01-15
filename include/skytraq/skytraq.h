@@ -55,16 +55,22 @@ typedef boost::function<void(const std::string&)> InfoMsgCallback;
 typedef boost::function<void(const std::string&)> WarningMsgCallback;
 typedef boost::function<void(const std::string&)> ErrorMsgCallback;
 
-// GPS Data Callbacks
+//! System Output Message Callbacks
 typedef boost::function<void(SoftwareVersion&, double&)> SoftwareVersionCallback;
 typedef boost::function<void(SoftwareCRC&, double&)> SoftwareCRCCallback;
 typedef boost::function<void(Ack&, double&)> AckCallback;
 typedef boost::function<void(Nack&, double&)> NackCallback;
+typedef boost::function<void(PositionUpdateRate&, double&)> PositionUpdateRateCallback;
+//! GPS Output Message Callbacks
+typedef boost::function<void(WaasStatus&, double&)> WaasStatusCallback;
+typedef boost::function<void(NavigationMode&, double&)> NavigationModeCallback;
 typedef boost::function<void(Almanac&, double&)> AlmanacCallback;
 typedef boost::function<void(Ephemeris&, double&)> EphemerisCallback;
+typedef boost::function<void(MeasurementTime&, double&)> MeasurementTimeCallback;
 typedef boost::function<void(RawMeasurements&, double&)> RawMeasurementsCallback;
 typedef boost::function<void(ReceiverNavStatus&, double&)> ReceiverNavStatusCallback;
 typedef boost::function<void(SubframeBufferData&, double&)> SubframeBufferDataCallback;
+
 
 class Skytraq
 {
