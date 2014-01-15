@@ -95,6 +95,10 @@ inline void DefaultRawMeasurementCallback(RawMeasurements& raw_measurements, dou
 
 }
 
+inline void DefaultChannelStatusCallback(ChannelStatusCallback& channel_status, double& timestamp){
+
+}
+
 inline void DefaultNavStatusCallback(ReceiverNavStatus& nav_status, double& timestamp){
 
 }
@@ -126,6 +130,7 @@ Skytraq::Skytraq() {
     ephemeris_callback_ = DefaultEphemerisCallback;
     measurement_time_callback_ = DefaultMeasurementTimeCallback;
     raw_measurement_callback_ = DefaultRawMeasurementCallback;
+    channel_status_callback_ = DefaultChannelStatusCallback;
     receiver_nav_status_callback_ = DefaultNavStatusCallback;
     subframe_buffer_data_callback_ = DefaultSubframeBufferDataCallback;
     reading_acknowledgement_ = false;
@@ -820,35 +825,110 @@ void Skytraq::ParseLog(uint8_t *log, size_t logID) {
 
         //! Output System Messages
 		case SOFTWARE_VERSION: // Receiver outputs if accurate internally stored pos and time aren't available
-			log_info_("AID-REQ message received by computer.");
+			SoftwareVersion cur_software_version;
+            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            memcpy(&cur_software_version, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
+            if(software_version_callback_)
+                software_version_callback_(cur_software_version,read_timestamp_);
 			break;
         case SOFTWARE_CRC:
+            SoftwareCRC cur_software_crc;
+            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            memcpy(&cur_software_crc, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
+            if(software_crc_callback_)
+                software_crc_callback_(cur_software_crc,read_timestamp_);
             break;
         case ACK:
+            Ack cur_ack;
+            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            memcpy(&cur_ack, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
+            if(ack_callback_)
+                ack_callback_(cur_ack,read_timestamp_);
             break;
         case NACK:
+            Nack cur_nack;
+            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            memcpy(&cur_nack, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
+            if(nack_callback_)
+                nack_callback_(cur_nack,read_timestamp_);
             break;
         case POS_UPDATE_RATE:
+            PositionUpdateRate cur_pos_update_rate;
+            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            memcpy(&cur_pos_update_rate, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
+            if(pos_update_rate_callback_)
+                pos_update_rate_callback_(cur_pos_update_rate,read_timestamp_);
             break;
 
         //! Output GPS Messages
         case GPS_WAAS_STATUS:
+            WaasStatus cur_waas_status;
+            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            memcpy(&cur_waas_status, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
+            if(waas_status_callback_)
+                waas_status_callback_(cur_waas_status,read_timestamp_);
             break;
         case GPS_NAV_MODE:
+            NavigationMode cur_nav_mode;
+            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            memcpy(&cur_nav_mode, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
+            if(nav_mode_callback_)
+                nav_mode_callback_(cur_nav_mode,read_timestamp_);
             break;
         case GPS_ALMANAC:
+            Almanac cur_almanac;
+            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            memcpy(&cur_almanac, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
+            if(almanac_callback_)
+                almanac_callback_(cur_almanac,read_timestamp_);
             break;
         case GPS_EPHEMERIS:
+            Ephemeris cur_ephemeris;
+            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            memcpy(&cur_ephemeris, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
+            if(ephemeris_callback_)
+                ephemeris_callback_(cur_ephemeris,read_timestamp_);
             break;
         case MEAS_TIME:
+            MeasurementTime cur_measurement_time;
+            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            memcpy(&cur_measurement_time, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
+            if(measurement_time_callback_)
+                measurement_time_callback_(cur_measurement_time,read_timestamp_);
             break;
         case RAW_MEAS:
+            RawMeasurements cur_raw_measurements;
+            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            // Copy header and payload
+            memcpy(&cur_raw_measurements, log, payload_length+HEADER_LENGTH);
+            //Copy Footer
+            memcpy(&cur_raw_measurements.footer, log+payload_length+HEADER_LENGTH, FOOTER_LENGTH);
+            if(raw_measurement_callback_)
+                raw_measurement_callback_(cur_raw_measurements,read_timestamp_);
             break;
         case SV_CH_STATUS:
+            ChannelStatus cur_channel_status;
+            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            // Copy header and payload
+            memcpy(&cur_channel_status, log, payload_length+HEADER_LENGTH);
+            //Copy Footer
+            memcpy(&cur_channel_status.footer, log+payload_length+HEADER_LENGTH, FOOTER_LENGTH);
+            if(channel_status_callback_)
+                channel_status_callback_(cur_channel_status,read_timestamp_);
             break;
         case RCV_STATE:
+            ReceiverNavStatus cur_reciever_status;
+            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            memcpy(&cur_reciever_status, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
+            if(receiver_nav_status_callback_)
+                receiver_nav_status_callback_(cur_reciever_status,read_timestamp_);
             break;
         case SUBFRAME:
+            SubframeBufferData cur_subframe_buffer_data;
+            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            memcpy(&cur_subframe_buffer_data, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
+            if(subframe_buffer_data_callback_)
+                subframe_buffer_data_callback_(cur_subframe_buffer_data,read_timestamp_);
             break;
         
 		} // end switch (logID)

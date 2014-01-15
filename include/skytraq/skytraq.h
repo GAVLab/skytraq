@@ -68,6 +68,7 @@ typedef boost::function<void(Almanac&, double&)> AlmanacCallback;
 typedef boost::function<void(Ephemeris&, double&)> EphemerisCallback;
 typedef boost::function<void(MeasurementTime&, double&)> MeasurementTimeCallback;
 typedef boost::function<void(RawMeasurements&, double&)> RawMeasurementsCallback;
+typedef boost::function<void(ChannelStatus&, double&)> ChannelStatusCallback;
 typedef boost::function<void(ReceiverNavStatus&, double&)> ReceiverNavStatusCallback;
 typedef boost::function<void(SubframeBufferData&, double&)> SubframeBufferDataCallback;
 
@@ -105,11 +106,7 @@ public:
      *
      * @return True if the GPS was found, false if it was not.
      */
-     bool Ping(int num_attempts=5);
-
-     void set_time_handler(GetTimeCallback time_handler) {
-         this->time_handler_ = time_handler;
-    }
+    bool Ping(int num_attempts=5);
 
     bool ConfigureMessagesOutputRate(skytraq::BinaryOutputRate rate,  
                                     skytraq::DisableEnable meas_time_message, 
@@ -136,6 +133,9 @@ public:
     HandleAcknowledgementCallback handle_acknowledgement_;
     GetTimeCallback time_handler_; //!< Function pointer to callback function for timestamping
 
+    void set_time_handler(GetTimeCallback time_handler) {
+         this->time_handler_ = time_handler;
+    }
     //////////////////////////////////////////////////////
     // Aiding Data Polling Messages
     //////////////////////////////////////////////////////
@@ -168,6 +168,7 @@ public:
     void set_ephemeris_callback_(EphemerisCallback callback){ephemeris_callback_=callback;};
     void set_measurement_time_callback_(MeasurementTimeCallback callback){measurement_time_callback_=callback;};;
     void set_raw_measurement_callback_(RawMeasurementsCallback callback){raw_measurement_callback_=callback;};
+    void set_channel_status_callback_(ChannelStatusCallback callback){channel_status_callback_=callback;};
     void set_receiver_nav_status_callback_(ReceiverNavStatusCallback callback){receiver_nav_status_callback_=callback;};
     void set_subframe_buffer_data_callback_(SubframeBufferDataCallback callback){subframe_buffer_data_callback_=callback;};
 
@@ -233,6 +234,7 @@ private:
     EphemerisCallback ephemeris_callback_;
     MeasurementTimeCallback measurement_time_callback_;
     RawMeasurementsCallback raw_measurement_callback_;
+    ChannelStatusCallback channel_status_callback_;
     ReceiverNavStatusCallback receiver_nav_status_callback_;
     SubframeBufferDataCallback subframe_buffer_data_callback_;
 
