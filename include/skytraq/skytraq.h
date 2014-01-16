@@ -136,6 +136,12 @@ public:
     void set_time_handler(GetTimeCallback time_handler) {
          this->time_handler_ = time_handler;
     }
+    
+    //! System Input Message Methods
+    bool SendMessage(uint8_t *msg_ptr, size_t length);
+    bool RestartReceiver(Skytraq::StartMode start_mode);
+    bool QuerySoftwareVersion();
+
     //////////////////////////////////////////////////////
     // Aiding Data Polling Messages
     //////////////////////////////////////////////////////
@@ -147,7 +153,6 @@ public:
     //////////////////////////////////////////////////////
     // Send Aiding Data to Receiver
     //////////////////////////////////////////////////////
-    bool SendMessage(uint8_t *msg_ptr, size_t length);
     bool SendAidIni(AidIni ini);
     bool SendAidEphem(Ephemerides ephems);
     bool SendAidAlm(Almanac almanac);

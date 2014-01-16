@@ -390,7 +390,7 @@ bool Skytraq::RestartReceiver(Skytraq::StartMode start_mode) {
         restart_msg.footer.end1 = SKYTRAQ_END_BYTE_1;
         restart_msg.footer.end2 = SKYTRAQ_END_BYTE_2;
 
-        unsigned char* msg_ptr = (unsigned char*)&ini;
+        unsigned char* msg_ptr = (unsigned char*)&restart_msg;
         return SendMessage(msg_ptr,HEADER_LENGTH+SYSTEM_RESTART_PAYLOAD_LENGTH+FOOTERLENGTH);
 
     } catch (std::exception &e) {
@@ -401,7 +401,29 @@ bool Skytraq::RestartReceiver(Skytraq::StartMode start_mode) {
     }
 }
 
+bool Skytraq::QuerySoftwareVersion() {
+    try {
+        QuerySoftwareVersion query_software_version;        
+        query_software_version.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        query_software_version.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        query_software_version.header.payload_length = QUERY_SOFTWARE_VERSION_PAYLOAD_LENGTH;
+        query_software_version.message_id = QUERY_SOFTWARE_VERSION;
+        query_software_version.software_type = SYSTEM_CODE;
+        query_software_version.footer.end1 = SKYTRAQ_END_BYTE_1;
+        query_software_version.footer.end2 = SKYTRAQ_END_BYTE_2;
 
+        unsigned char* msg_ptr = (unsigned char*)&query_software_version;
+        calculateCheckSum(msg_ptr, QUERY_SOFTWARE_VERSION_PAYLOAD_LENGTH,
+                          &query_software_version.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+SYSTEM_RESTART_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::QuerySoftwareVersion(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
 
 // (AID-EPH) Polls for Ephemeris data
 bool Skytraq::PollEphem(uint8_t svid) {
