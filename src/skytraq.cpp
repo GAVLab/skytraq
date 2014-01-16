@@ -242,7 +242,7 @@ bool Skytraq::Ping(int num_attempts) {
                         //    //return false;
                         continue;
                     }
-                    
+
                     // string sw_version;
                     // string hw_version;
                     // string rom_version;
@@ -332,10 +332,43 @@ void Skytraq::ReadSerialPort() {
 
 }
 
+// Send Message
+bool Skytraq::SendMessage(uint8_t* msg_ptr, size_t length)
+{
+    try {
+        stringstream output1;
+        //std::cout << length << std::endl;
+        //std::cout << "Message Pointer" << endl;
+        //printHex((char*) msg_ptr, length);
+        size_t bytes_written;
+
+        if ((serial_port_!=NULL)&&(serial_port_->isOpen())) {
+          bytes_written=serial_port_->write(msg_ptr, length);
+        } else {
+            log_error_("Unable to send message. Serial port not open.");
+            return false;
+        }
+        // check that full message was sent to serial port
+        if (bytes_written == length) {
+            return true;
+        }
+        else {
+            log_error_("Full message was not sent over serial port.");
+            output1 << "Attempted to send " << length << "bytes. " << bytes_written << " bytes sent.";
+            log_error_(output1.str());
+            return false;
+        }
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::SendMessage(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
 //////////////////////////////////////////////////////////////////////////////
 // System Input Message Methods
 /////////////////////////////////////////////////////////////////////////////
-
 bool Skytraq::RestartReceiver(Skytraq::StartMode start_mode) {
     try {
         SystemRestart restart_msg;
@@ -357,6 +390,8 @@ bool Skytraq::RestartReceiver(Skytraq::StartMode start_mode) {
         restart_msg.footer.end1 = SKYTRAQ_END_BYTE_1;
         restart_msg.footer.end2 = SKYTRAQ_END_BYTE_2;
 
+        unsigned char* msg_ptr = (unsigned char*)&ini;
+        return SendMessage(msg_ptr,HEADER_LENGTH+SYSTEM_RESTART_PAYLOAD_LENGTH+FOOTERLENGTH);
 
     } catch (std::exception &e) {
         std::stringstream output;
@@ -366,86 +401,7 @@ bool Skytraq::RestartReceiver(Skytraq::StartMode start_mode) {
     }
 }
 
-bool Skytraq::RestartReceiver() {
-    try {
 
-    } catch (std::exception &e) {
-        std::stringstream output;
-        output << "Error in Skytraq::RestartReceiver(): " << e.what();
-        log_error_(output.str());
-        return false;
-    }
-}
-
-
-
-// Poll Message used to request for all SV
-bool Skytraq::PollMessage(uint8_t class_id, uint8_t msg_id) {
-	try {
-		uint8_t message[8];
-
-		message[0]=UBX_SYNC_BYTE_1;        // sync 1
-		message[1]=UBX_SYNC_BYTE_2;        // sync 2
-		message[2]=class_id;
-		message[3]=msg_id;
-		message[4]=0;           // length 1
-		message[5]=0;           // length 2
-		message[6]=0;           // checksum 1
-		message[7]=0;           // checksum 2
-
-		uint8_t* msg_ptr = (uint8_t*) &message;
-
-		calculateCheckSum(msg_ptr + 2, 4, msg_ptr + 6);
-
-        if ((serial_port_!=NULL)&&(serial_port_->isOpen())) {
-		  size_t bytes_written = serial_port_->write(message, 8);
-          return bytes_written == 8;
-        } else {
-            log_error_("Unable to send poll message. Serial port not open.");
-            return false;
-        }
-
-	} catch (std::exception &e) {
-		std::stringstream output;
-		output << "Error sending Skytraq poll message: " << e.what();
-		log_error_(output.str());
-		return 0;
-	}
-}
-
-// Poll Message used to request for one SV
-bool Skytraq::PollMessageIndSV(uint8_t class_id, uint8_t msg_id, uint8_t svid) {
-    try {
-		uint8_t message[9];
-
-		message[0] = UBX_SYNC_BYTE_1;        // sync 1
-		message[1] = UBX_SYNC_BYTE_2;        // sync 2
-		message[2] = class_id;
-		message[3] = msg_id;
-		message[4] = 1;           // length 1
-		message[5] = 0;           // length 2
-		message[6] = svid;        // Payload
-		message[7] = 0;           // checksum 1
-		message[8] = 0;           // checksum 2
-
-		uint8_t* msg_ptr = (uint8_t*) &message;
-		calculateCheckSum(msg_ptr + 2, 5, msg_ptr + 7);
-
-        if ((serial_port_!=NULL)&&(serial_port_->isOpen())) {
-		    size_t bytes_written = serial_port_->write(msg_ptr, 9);
-            return bytes_written == 9;
-        } else {
-            log_error_("Unable to send poll ind. sv. message. Serial port not open.");
-            return false;
-        }
-
-    } catch (std::exception &e) {
-		std::stringstream output;
-		output << "Error polling individual svs: " << e.what();
-		log_error_(output.str());
-		return 0;
-	}
-}
 
 // (AID-EPH) Polls for Ephemeris data
 bool Skytraq::PollEphem(uint8_t svid) {
@@ -607,39 +563,7 @@ void Skytraq::SetOutputFormatToBinary() {
 //////////////////////////////////////////////////////////////
 // Functions to  Aiding Data to Receiver
 //////////////////////////////////////////////////////////////
-// Send Message
-bool Skytraq::SendMessage(uint8_t* msg_ptr, size_t length)
-{
-	try {
-		stringstream output1;
-		//std::cout << length << std::endl;
-		//std::cout << "Message Pointer" << endl;
-		//printHex((char*) msg_ptr, length);
-        size_t bytes_written;
 
-        if ((serial_port_!=NULL)&&(serial_port_->isOpen())) {
-		  bytes_written=serial_port_->write(msg_ptr, length);
-        } else {
-            log_error_("Unable to send message. Serial port not open.");
-            return false;
-        }
-		// check that full message was sent to serial port
-		if (bytes_written == length) {
-			return true;
-		}
-		else {
-			log_error_("Full message was not sent over serial port.");
-			output1 << "Attempted to send " << length << "bytes. " << bytes_written << " bytes sent.";
-			log_error_(output1.str());
-			return false;
-		}
-	} catch (std::exception &e) {
-		std::stringstream output;
-		output << "Error sending Skytraq message: " << e.what();
-		log_error_(output.str());
-		return false;
-	}
-}
 
 // Send AID-INI to Receiver
 bool Skytraq::SendAidIni(AidIni ini)
