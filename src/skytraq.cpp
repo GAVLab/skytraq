@@ -206,7 +206,7 @@ bool Skytraq::Ping(int num_attempts) {
             log_info_("Searching for Skytraq receiver...");
             // request version information
 
-            SetOutputFormatBinary();
+            PollSoftwareVersion();
 
             boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
 
@@ -232,29 +232,27 @@ bool Skytraq::Ping(int num_attempts) {
                 if (result[ii] == SKYTRAQ_SYNC_BYTE_1) {
                     if (result[ii + 1] != SKYTRAQ_SYNC_BYTE_2)
                         continue;
-                    if (result[ii + 2] != MSG_CLASS_MON)
-                        continue;
-                    if (result[ii + 3] != MSG_ID_MON_VER)
+                    if (result[ii + 4] != ACK)
                         continue;
                     //std::cout << "length1:" << hex << (unsigned int)result[ii+4] << std::endl;
                     //std::cout << "length2:" << hex << (unsigned int)result[ii+5] << std::endl;
-                    length = (result[ii + 4]) + (result[ii + 5] << 8);
-                    if (length < 40) {
+                    length = (result[ii + 2]) + (result[ii + 3] << 8);
+                    if (length < ACK_PAYLOAD_LENGTH) {
                         log_debug_("Incomplete version message received");
                         //    //return false;
                         continue;
                     }
-
-                    string sw_version;
-                    string hw_version;
-                    string rom_version;
-                    sw_version.append((char*) (result + 6));
-                    hw_version.append((char*) (result + 36));
-                    //rom_version.append((char*)(result+46));
-                    log_info_("Skytraq receiver found.");
-                    log_info_("Software Version: " + sw_version);
-                    log_info_("Hardware Version: " + hw_version);
-                    //log_info_("ROM Version: " + rom_version);
+                    
+                    // string sw_version;
+                    // string hw_version;
+                    // string rom_version;
+                    // sw_version.append((char*) (result + 6));
+                    // hw_version.append((char*) (result + 36));
+                    // //rom_version.append((char*)(result+46));
+                    // log_info_("Skytraq receiver found.");
+                    // log_info_("Software Version: " + sw_version);
+                    // log_info_("Hardware Version: " + hw_version);
+                    // //log_info_("ROM Version: " + rom_version);
                     return true;
                 }
             }
@@ -335,8 +333,51 @@ void Skytraq::ReadSerialPort() {
 }
 
 //////////////////////////////////////////////////////////////////////////////
-// AIDING DATA POLL MESSAGES
+// System Input Message Methods
 /////////////////////////////////////////////////////////////////////////////
+
+bool Skytraq::RestartReceiver(Skytraq::StartMode start_mode) {
+    try {
+        SystemRestart restart_msg;
+        restart_msg.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        restart_msg.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        restart_msg.header.payload_length = SYSTEM_RESTART_PAYLOAD_LENGTH;
+        restart_msg.message_id = SYSTEM_RESTART;
+        restart_msg.start_mode = start_mode;
+        restart_msg.utc_year = ;      //!< >=1980
+        restart_msg.utc_month = ;      //!< 1-12
+        restart_msg.utc_day = ;        //!< 1-31
+        restart_msg.utc_hour = ;       //!< 0-23
+        restart_msg.utc_minute = ;     //!< 0-59
+        restart_msg.utc_second = ;     //!< 0-59
+        restart_msg.latitude = ;       //!< -9000 to 9000 (>0 North Hem, <0 South Hem) [1/100 deg]
+        restart_msg.longitude = ;      //!< -18000 to 18000 (>0 East Hem, <0 West Hem) [1/100 deg]
+        restart_msg.altitude = ;       //!< -1000 to 18300 [m]
+        restart_msg.footer.checksum = 0;
+        restart_msg.footer.end1 = SKYTRAQ_END_BYTE_1;
+        restart_msg.footer.end2 = SKYTRAQ_END_BYTE_2;
+
+
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::RestartReceiver(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
+bool Skytraq::RestartReceiver() {
+    try {
+
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::RestartReceiver(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
+
 
 // Poll Message used to request for all SV
 bool Skytraq::PollMessage(uint8_t class_id, uint8_t msg_id) {
