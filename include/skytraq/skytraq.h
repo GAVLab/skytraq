@@ -151,7 +151,8 @@ public:
     bool QuerySoftwareVersion();
     bool QuerySoftwareCrcVersion();
     bool RestoreFactoryDefaults();
-    
+    bool ConfigureSerialPort(uint8_t com_port, uint8_t baudrate=115200) 
+
     //////////////////////////////////////////////////////
     // Aiding Data Polling Messages
     //////////////////////////////////////////////////////

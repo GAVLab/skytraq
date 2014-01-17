@@ -507,7 +507,7 @@ bool Skytraq::RestoreFactoryDefaults()
         calculateCheckSum(msg_ptr, RESTORE_FACTORY_DEFAULTS_PAYLOAD_LENGTH,
                           &restore_factory_defaults.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+SYSTEM_RESTART_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+RESTORE_FACTORY_DEFAULTS_PAYLOAD_LENGTH+FOOTERLENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::RestoreFactoryDefaults(): " << e.what();
@@ -516,13 +516,32 @@ bool Skytraq::RestoreFactoryDefaults()
     }
 }
 
-    struct RestoreFactoryDefaults
-    {
-        SkytraqHeader header;
-        uint8_t message_id;
-        uint8_t type;           //!< = 0x01
-        SkytraqFooter footer;
+bool Skytraq::ConfigureSerialPort(uint8_t com_port, uint8_t baudrate) 
+{
+    try {
+        ConfigureSerialPort configure_serial_port;        
+        configure_serial_port.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        configure_serial_port.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        configure_serial_port.header.payload_length = CONFIGURE_SERIAL_PORT_PAYLOAD_LENGTH;
+        configure_serial_port.message_id = SET_FACTORY_DEFAULTS;
+        configure_serial_port.com_port = com_port;
+        configure_serial_port.baudrate = baudrate;
+        configure_serial_port.attributes = UPDATE_TO_SRAM_AND_FLASH;
+        configure_serial_port.footer.end1 = SKYTRAQ_END_BYTE_1;
+        configure_serial_port.footer.end2 = SKYTRAQ_END_BYTE_2;
+
+        unsigned char* msg_ptr = (unsigned char*)&configure_serial_port;
+        calculateCheckSum(msg_ptr, CONFIGURE_SERIAL_PORT_PAYLOAD_LENGTH,
+                          &configure_serial_port.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_SERIAL_PORT_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::ConfigureSerialPort(): " << e.what();
+        log_error_(output.str());
+        return false;
     }
+}
 
 // (AID-EPH) Polls for Ephemeris data
 bool Skytraq::PollEphem(uint8_t svid) {
