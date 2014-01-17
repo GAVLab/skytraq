@@ -491,6 +491,39 @@ bool Skytraq::QuerySoftwareCrcVersion() {
     }
 }
 
+bool Skytraq::RestoreFactoryDefaults() 
+{
+    try {
+        RestoreFactoryDefaults restore_factory_defaults;        
+        restore_factory_defaults.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        restore_factory_defaults.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        restore_factory_defaults.header.payload_length = RESTORE_FACTORY_DEFAULTS_PAYLOAD_LENGTH;
+        restore_factory_defaults.message_id = SET_FACTORY_DEFAULTS;
+        restore_factory_defaults.type = 0x01;
+        restore_factory_defaults.footer.end1 = SKYTRAQ_END_BYTE_1;
+        restore_factory_defaults.footer.end2 = SKYTRAQ_END_BYTE_2;
+
+        unsigned char* msg_ptr = (unsigned char*)&restore_factory_defaults;
+        calculateCheckSum(msg_ptr, RESTORE_FACTORY_DEFAULTS_PAYLOAD_LENGTH,
+                          &restore_factory_defaults.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+SYSTEM_RESTART_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::RestoreFactoryDefaults(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
+    struct RestoreFactoryDefaults
+    {
+        SkytraqHeader header;
+        uint8_t message_id;
+        uint8_t type;           //!< = 0x01
+        SkytraqFooter footer;
+    }
+
 // (AID-EPH) Polls for Ephemeris data
 bool Skytraq::PollEphem(uint8_t svid) {
 

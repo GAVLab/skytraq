@@ -150,7 +150,8 @@ public:
     void ColdRestartReceiver();
     bool QuerySoftwareVersion();
     bool QuerySoftwareCrcVersion();
-
+    bool RestoreFactoryDefaults();
+    
     //////////////////////////////////////////////////////
     // Aiding Data Polling Messages
     //////////////////////////////////////////////////////
