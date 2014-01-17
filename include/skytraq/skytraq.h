@@ -149,6 +149,7 @@ public:
     void WarmRestartReceiver();
     void ColdRestartReceiver();
     bool QuerySoftwareVersion();
+    bool QuerySoftwareCrcVersion();
 
     //////////////////////////////////////////////////////
     // Aiding Data Polling Messages
