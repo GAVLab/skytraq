@@ -390,11 +390,12 @@ bool Skytraq::RestartReceiver(Skytraq::StartMode start_mode, uint16_t utc_year,
         restart_msg.latitude = latitude;        //!< -9000 to 9000 (>0 North Hem, <0 South Hem) [1/100 deg]
         restart_msg.longitude = longitude;      //!< -18000 to 18000 (>0 East Hem, <0 West Hem) [1/100 deg]
         restart_msg.altitude = altitude;        //!< -1000 to 18300 [m]
-        restart_msg.footer.checksum = 0;
         restart_msg.footer.end1 = SKYTRAQ_END_BYTE_1;
         restart_msg.footer.end2 = SKYTRAQ_END_BYTE_2;
 
         unsigned char* msg_ptr = (unsigned char*)&restart_msg;
+        calculateCheckSum(msg_ptr, SYSTEM_RESTART_PAYLOAD_LENGTH,
+                          &restart_msg.footer.checksum);
         return SendMessage(msg_ptr,HEADER_LENGTH+SYSTEM_RESTART_PAYLOAD_LENGTH+FOOTERLENGTH);
 
     } catch (std::exception &e) {
