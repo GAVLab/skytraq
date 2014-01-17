@@ -394,7 +394,7 @@ bool Skytraq::RestartReceiver(Skytraq::StartMode start_mode, uint16_t utc_year,
         restart_msg.footer.end2 = SKYTRAQ_END_BYTE_2;
 
         unsigned char* msg_ptr = (unsigned char*)&restart_msg;
-        calculateCheckSum(msg_ptr, SYSTEM_RESTART_PAYLOAD_LENGTH,
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, SYSTEM_RESTART_PAYLOAD_LENGTH,
                           &restart_msg.footer.checksum);
         return SendMessage(msg_ptr,HEADER_LENGTH+SYSTEM_RESTART_PAYLOAD_LENGTH+FOOTERLENGTH);
 
@@ -455,7 +455,7 @@ bool Skytraq::QuerySoftwareVersion() {
         query_software_version.footer.end2 = SKYTRAQ_END_BYTE_2;
 
         unsigned char* msg_ptr = (unsigned char*)&query_software_version;
-        calculateCheckSum(msg_ptr, QUERY_SOFTWARE_VERSION_PAYLOAD_LENGTH,
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, QUERY_SOFTWARE_VERSION_PAYLOAD_LENGTH,
                           &query_software_version.footer.checksum);
         
         return SendMessage(msg_ptr,HEADER_LENGTH+SYSTEM_RESTART_PAYLOAD_LENGTH+FOOTERLENGTH);
@@ -479,7 +479,7 @@ bool Skytraq::QuerySoftwareCrcVersion() {
         query_software_crc_version.footer.end2 = SKYTRAQ_END_BYTE_2;
 
         unsigned char* msg_ptr = (unsigned char*)&query_software_crc_version;
-        calculateCheckSum(msg_ptr, QUERY_SOFTWARE_CRC_VERSION_PAYLOAD_LENGTH,
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, QUERY_SOFTWARE_CRC_VERSION_PAYLOAD_LENGTH,
                           &query_software_crc_version.footer.checksum);
         
         return SendMessage(msg_ptr,HEADER_LENGTH+SYSTEM_RESTART_PAYLOAD_LENGTH+FOOTERLENGTH);
@@ -504,7 +504,7 @@ bool Skytraq::RestoreFactoryDefaults()
         restore_factory_defaults.footer.end2 = SKYTRAQ_END_BYTE_2;
 
         unsigned char* msg_ptr = (unsigned char*)&restore_factory_defaults;
-        calculateCheckSum(msg_ptr, RESTORE_FACTORY_DEFAULTS_PAYLOAD_LENGTH,
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, RESTORE_FACTORY_DEFAULTS_PAYLOAD_LENGTH,
                           &restore_factory_defaults.footer.checksum);
         
         return SendMessage(msg_ptr,HEADER_LENGTH+RESTORE_FACTORY_DEFAULTS_PAYLOAD_LENGTH+FOOTERLENGTH);
@@ -531,7 +531,7 @@ bool Skytraq::ConfigureSerialPort(uint8_t com_port, uint8_t baudrate)
         configure_serial_port.footer.end2 = SKYTRAQ_END_BYTE_2;
 
         unsigned char* msg_ptr = (unsigned char*)&configure_serial_port;
-        calculateCheckSum(msg_ptr, CONFIGURE_SERIAL_PORT_PAYLOAD_LENGTH,
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_SERIAL_PORT_PAYLOAD_LENGTH,
                           &configure_serial_port.footer.checksum);
         
         return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_SERIAL_PORT_PAYLOAD_LENGTH+FOOTERLENGTH);
@@ -567,7 +567,7 @@ bool Skytraq::ConfigureNmeaIntervals(uint8_t gga_interval, uint8_t gsa_interval,
         configure_nmea_intervals.footer.end2 = SKYTRAQ_END_BYTE_2;
 
         unsigned char* msg_ptr = (unsigned char*)&configure_nmea_intervals;
-        calculateCheckSum(msg_ptr, CONFIGURE_NMEA_INTERVALS_PAYLOAD_LENGTH,
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_NMEA_INTERVALS_PAYLOAD_LENGTH,
                           &configure_nmea_intervals.footer.checksum);
         
         return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_NMEA_INTERVALS_PAYLOAD_LENGTH+FOOTERLENGTH);
@@ -579,16 +579,229 @@ bool Skytraq::ConfigureNmeaIntervals(uint8_t gga_interval, uint8_t gsa_interval,
     }
 }
 
+bool Skytraq::ConfigureOutputFormat(OutputType output_type) 
+{
+    try {
+        ConfigureOutputFormat configure_output_format;        
+        configure_output_format.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        configure_output_format.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        configure_output_format.header.payload_length = CONFIGURE_OUTPUT_FORMAT_PAYLOAD_LENGTH;
+        configure_output_format.message_id = CFG_OUTPUT_FORMAT;
+        configure_output_format.type = output_type;
+        configure_output_format.attributes = UPDATE_TO_SRAM_AND_FLASH;
+        configure_output_format.footer.end1 = SKYTRAQ_END_BYTE_1;
+        configure_output_format.footer.end2 = SKYTRAQ_END_BYTE_2;
+
+        unsigned char* msg_ptr = (unsigned char*)&configure_output_format;
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_OUTPUT_FORMAT_PAYLOAD_LENGTH,
+                          &configure_output_format.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_OUTPUT_FORMAT_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::ConfigureOutputFormat(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
+bool Skytraq::SetOutputFormatToBinary()
+{
+    try {
+        return ConfigureOutputFormat(BINARY_OUTPUT);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::SetOutputFormatToBinary(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
+bool Skytraq::SetOutputFormatToNmea()
+{
+    try {
+        return ConfigureOutputFormat(NMEA_OUTPUT);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::SetOutputFormatToNmea(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
+bool Skytraq::DisableAllOutput()
+{
+    try {
+        return ConfigureOutputFormat(NO_OUTPUT);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::DisableAllOutput(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
 bool Skytraq::DisableNmeaOutput()
 {
     try {
-        return ConfigureNmeaIntervals(0,0,0,0,0,0,0);
+        return ConfigureOutputFormat(0,0,0,0,0,0,0);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::DisableNmeaOutput(): " << e.what();
         log_error_(output.str());
         return false;
+    }
 }
+
+bool Skytraq::EnablePowerSaveMode() 
+{
+    try {
+        ConfigurePowerSaveMode configure_power_save_mode;        
+        configure_power_save_mode.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        configure_power_save_mode.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        configure_power_save_mode.header.payload_length = CONFIGURE_POWER_SAVE_MODE_PAYLOAD_LENGTH;
+        configure_power_save_mode.message_id = CFG_POWER_MODE;
+        configure_power_save_mode.power_save_mode = skytraq::ENABLE;
+        configure_power_save_mode.attributes = UPDATE_TO_SRAM_AND_FLASH;
+        configure_power_save_mode.footer.end1 = SKYTRAQ_END_BYTE_1;
+        configure_power_save_mode.footer.end2 = SKYTRAQ_END_BYTE_2;
+
+        unsigned char* msg_ptr = (unsigned char*)&configure_power_save_mode;
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_POWER_SAVE_MODE_PAYLOAD_LENGTH,
+                          &configure_power_save_mode.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_POWER_SAVE_MODE_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::EnablePowerSaveMode(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
+bool Skytraq::DisablePowerSaveMode() 
+{
+    try {
+        ConfigurePowerSaveMode configure_power_save_mode;        
+        configure_power_save_mode.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        configure_power_save_mode.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        configure_power_save_mode.header.payload_length = CONFIGURE_POWER_SAVE_MODE_PAYLOAD_LENGTH;
+        configure_power_save_mode.message_id = CFG_POWER_MODE;
+        configure_power_save_mode.power_save_mode = skytraq::DISABLE;
+        configure_power_save_mode.attributes = UPDATE_TO_SRAM_AND_FLASH;
+        configure_power_save_mode.footer.end1 = SKYTRAQ_END_BYTE_1;
+        configure_power_save_mode.footer.end2 = SKYTRAQ_END_BYTE_2;
+
+        unsigned char* msg_ptr = (unsigned char*)&configure_power_save_mode;
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_POWER_SAVE_MODE_PAYLOAD_LENGTH,
+                          &configure_power_save_mode.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_POWER_SAVE_MODE_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::DisablePowerSaveMode(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
+bool Skytraq::ConfigurePositionUpdateRate(uint8_t update_rate) 
+{
+    try {
+        ConfigurePositionUpdateRate configure_position_update_rate;        
+        configure_position_update_rate.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        configure_position_update_rate.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        configure_position_update_rate.header.payload_length = CONFIGURE_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH;
+        configure_position_update_rate.message_id = CFG_POS_UPDATE_RATE;
+        configure_position_update_rate.update_rate = update_rate;
+        configure_position_update_rate.attributes = UPDATE_TO_SRAM_AND_FLASH;
+        configure_position_update_rate.footer.end1 = SKYTRAQ_END_BYTE_1;
+        configure_position_update_rate.footer.end2 = SKYTRAQ_END_BYTE_2;
+
+        unsigned char* msg_ptr = (unsigned char*)&configure_position_update_rate;
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH,
+                          &configure_position_update_rate.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::ConfigurePositionUpdateRate(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
+bool Skytraq::QueryPositionUpdateRate() 
+{
+    try {
+        QueryPositionUpdateRate query_position_update_rate;        
+        query_position_update_rate.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        query_position_update_rate.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        query_position_update_rate.header.payload_length = QUERY_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH;
+        query_position_update_rate.message_id = QUERY_POS_UPDATE_RATE;
+        query_position_update_rate.footer.end1 = SKYTRAQ_END_BYTE_1;
+        query_position_update_rate.footer.end2 = SKYTRAQ_END_BYTE_2;
+
+        unsigned char* msg_ptr = (unsigned char*)&query_position_update_rate;
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, QUERY_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH,
+                          &query_position_update_rate.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+QUERY_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::QueryPositionUpdateRate(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
+// (CFG-MSG) Set message output rate for specified message
+bool Skytraq::ConfigureMessagesOutputRate(skytraq::BinaryOutputRate rate, 
+                                        skytraq::DisableEnable meas_time_message, 
+                                        skytraq::DisableEnable raw_meas_message, 
+                                        skytraq::DisableEnable channel_status_message, 
+                                        skytraq::DisableEnable receiver_state_message, 
+                                        skytraq::DisableEnable subframe_buffer_message) {
+    try {
+        ConfigureBinaryOutputRate message;
+        message.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        message.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        message.header.payload_length = CONFIGURE_BINARY_OUTPUT_RATE_PAYLOAD_LENGTH;
+        message.message_id = CFG_OUTPUT_RATE;
+        message.binary_output_rate = rate;
+        message.measurement_time = meas_time_message;               //!< (0xDC)
+        message.raw_measurements = raw_meas_message;                //!< (0xDD)
+        message.sv_channel_status = channel_status_message;         //!< (0xDE)
+        message.receiver_state = receiver_state_message;            //!< (0xDF)
+        message.subframe = subframe_buffer_message;                 //!< (0xEO)
+        message.attributes = UPDATE_TO_SRAM_AND_FLASH;
+
+        unsigned char* msg_ptr = (unsigned char*) &message;
+        calculateCheckSum(msg_ptr + HEADER_LENGTH, 
+                          CONFIGURE_BINARY_OUTPUT_RATE_PAYLOAD_LENGTH, 
+                          &message.footer.checksum);
+
+        message.footer.end1 = SKYTRAQ_END_BYTE_1;
+        message.footer.end2 = SKYTRAQ_END_BYTE_2;
+
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_BINARY_OUTPUT_RATE_PAYLOAD_LENGTH
+                            +FOOTER_LENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::ConfigureMessagesOutputRate(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
+//////////////////////////////////////////////////////////////////////////////
+//! GPS Input Message Methods
+/////////////////////////////////////////////////////////////////////////////
+
+
+
+
+
 
 // (AID-EPH) Polls for Ephemeris data
 bool Skytraq::PollEphem(uint8_t svid) {
@@ -650,74 +863,7 @@ bool Skytraq::PollAlmanac(int8_t svid) {
     }
 }
 
-// (CFG-MSG) Set message output rate for specified message
-bool Skytraq::ConfigureMessagesOutputRate(skytraq::BinaryOutputRate rate, 
-                                        skytraq::DisableEnable meas_time_message, 
-                                        skytraq::DisableEnable raw_meas_message, 
-                                        skytraq::DisableEnable channel_status_message, 
-                                        skytraq::DisableEnable receiver_state_message, 
-                                        skytraq::DisableEnable subframe_buffer_message) {
-	try {
-		ConfigureBinaryOutputRate message;
-		message.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
-		message.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
-		message.header.payload_length = CONFIGURE_BINARY_OUTPUT_RATE_PAYLOAD_LENGTH;
-		message.message_id = CFG_OUTPUT_RATE;
-		message.binary_output_rate = rate;
-        message.measurement_time = meas_time_message;               //!< (0xDC)
-        message.raw_measurements = raw_meas_message;                //!< (0xDD)
-        message.sv_channel_status = channel_status_message;         //!< (0xDE)
-        message.receiver_state = receiver_state_message;            //!< (0xDF)
-        message.subframe = subframe_buffer_message;                 //!< (0xEO)
-        message.attributes = UPDATE_TO_SRAM;
 
-		unsigned char* msg_ptr = (unsigned char*) &message;
-		calculateCheckSum(msg_ptr + HEADER_LENGTH, 
-                          CONFIGURE_BINARY_OUTPUT_RATE_PAYLOAD_LENGTH, 
-                          &message.footer.checksum);
-
-        message.footer.end1 = SKYTRAQ_END_BYTE_1;
-        message.footer.end2 = SKYTRAQ_END_BYTE_2;
-
-		return serial_port_->write(msg_ptr, sizeof(message)) == sizeof(message);
-	} catch (std::exception &e) {
-		std::stringstream output;
-		output << "Error in Skytraq::ConfigureMessagesOutputRate(): " << e.what();
-		log_error_(output.str());
-		return false;
-	}
-}
-
-// Set Port Configuration
-void Skytraq::SetOutputFormatToBinary() {
-	try {
-		ConfigureOutputFormat message;
-		//std::cout << sizeof(message) << std::endl;
-		message.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
-		message.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
-		message.header.payload_length = CONFIGURE_OUTPUT_FORMAT_PAYLOAD_LENGTH;
-        message.message_id = CFG_OUTPUT_FORMAT;
-        message.type = BINARY_OUTPUT;
-        message.attributes = UPDATE_TO_SRAM_AND_FLASH;
-
-        unsigned char* msg_ptr = (unsigned char*) &message;
-        calculateCheckSum(msg_ptr + HEADER_LENGTH, CONFIGURE_OUTPUT_FORMAT_PAYLOAD_LENGTH,
-                        message.footer.checksum);
-
-        message.footer.end1 = SKYTRAQ_END_BYTE_1;
-        message.footer.end2 = SKYTRAQ_END_BYTE_2;
-
-		log_info_("ConfigureOutputFormat Message Sent.");
-
-		//printHex((char*) &message, sizeof(message));
-
-		serial_port_->write(msg_ptr, sizeof(message));
-	} catch (std::exception &e) {
-		std::stringstream output;
-		output << "Error configuring Skytraq port: " << e.what();
-		log_error_(output.str());
-	}
-}
 
 // // Poll Port Configuration
 // void Skytraq::PollPortConfiguration(uint8_t port_identifier)

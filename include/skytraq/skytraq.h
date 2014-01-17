@@ -108,17 +108,6 @@ public:
      */
     bool Ping(int num_attempts=5);
 
-    bool ConfigureMessagesOutputRate(skytraq::BinaryOutputRate rate,  
-                                    skytraq::DisableEnable meas_time_message, 
-                                    skytraq::DisableEnable raw_meas_message, 
-                                    skytraq::DisableEnable channel_status_message, 
-                                    skytraq::DisableEnable receiver_state_message, 
-                                    skytraq::DisableEnable subframe_buffer_message);
-
-    bool ConfigureOutputFormat(skytraq::OutputType output_protocol,
-                               skytraq::Attributes attributes=UPDATE_TO_SRAM_AND_FLASH);
-    void SetOutputFormatBinary();
-
     //////////////////////////////////////////////////////
     // Diagnostic Callbacks
     //////////////////////////////////////////////////////
@@ -156,7 +145,22 @@ public:
                                     uint8_t gsv_interval=0, uint8_t gll_interval=0, 
                                     uint8_t rcm_interval=0, uint8_t vtg_interval=0, 
                                     uint8_t zda_interval=0);
+    bool ConfigureOutputFormat(OutputType output_type);
+    void SetOutputFormatBinary();
+    bool SetOutputFormatToNmea();
+    bool DisableAllOutput();
     bool DisableNmeaOutput();
+    bool EnablePowerSaveMode();
+    bool DisablePowerSaveMode();
+    bool ConfigurePositionUpdateRate(uint8_t update_rate);
+    bool QueryPositionUpdateRate();
+    bool ConfigureMessagesOutputRate(skytraq::BinaryOutputRate rate,  
+                                skytraq::DisableEnable meas_time_message, 
+                                skytraq::DisableEnable raw_meas_message, 
+                                skytraq::DisableEnable channel_status_message, 
+                                skytraq::DisableEnable receiver_state_message, 
+                                skytraq::DisableEnable subframe_buffer_message);
+    
 
     //////////////////////////////////////////////////////
     // Aiding Data Polling Messages
