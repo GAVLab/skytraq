@@ -139,7 +139,15 @@ public:
     
     //! System Input Message Methods
     bool SendMessage(uint8_t *msg_ptr, size_t length);
-    bool RestartReceiver(Skytraq::StartMode start_mode);
+    bool RestartReceiver(Skytraq::StartMode start_mode=NO_MODE_CHANGE, uint16_t utc_year=0, 
+                        uint8_t utc_month=0, uint8_t utc_day=0, uint8_t utc_hour=0, 
+                        uint8_t utc_minute=0, uint8_t utc_second=0, int16_t latitude=0,
+                        int16_t longitude=0, int16_t altitude=0);
+    void HotRestartReceiver(uint16_t utc_year, uint8_t utc_month, uint8_t utc_day, 
+                            uint8_t utc_hour, uint8_t utc_minute, uint8_t utc_second,
+                            int16_t latitude, int16_t longitude, int16_t altitude);
+    void WarmRestartReceiver();
+    void ColdRestartReceiver();
     bool QuerySoftwareVersion();
 
     //////////////////////////////////////////////////////

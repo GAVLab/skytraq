@@ -369,7 +369,11 @@ bool Skytraq::SendMessage(uint8_t* msg_ptr, size_t length)
 //////////////////////////////////////////////////////////////////////////////
 // System Input Message Methods
 /////////////////////////////////////////////////////////////////////////////
-bool Skytraq::RestartReceiver(Skytraq::StartMode start_mode) {
+bool Skytraq::RestartReceiver(Skytraq::StartMode start_mode, uint16_t utc_year, 
+                            uint8_t utc_month, uint8_t utc_day, uint8_t utc_hour, 
+                            uint8_t utc_minute, uint8_t utc_second, int16_t latitude,
+                            int16_t longitude, int16_t altitude)
+{
     try {
         SystemRestart restart_msg;
         restart_msg.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
@@ -377,15 +381,15 @@ bool Skytraq::RestartReceiver(Skytraq::StartMode start_mode) {
         restart_msg.header.payload_length = SYSTEM_RESTART_PAYLOAD_LENGTH;
         restart_msg.message_id = SYSTEM_RESTART;
         restart_msg.start_mode = start_mode;
-        restart_msg.utc_year = ;      //!< >=1980
-        restart_msg.utc_month = ;      //!< 1-12
-        restart_msg.utc_day = ;        //!< 1-31
-        restart_msg.utc_hour = ;       //!< 0-23
-        restart_msg.utc_minute = ;     //!< 0-59
-        restart_msg.utc_second = ;     //!< 0-59
-        restart_msg.latitude = ;       //!< -9000 to 9000 (>0 North Hem, <0 South Hem) [1/100 deg]
-        restart_msg.longitude = ;      //!< -18000 to 18000 (>0 East Hem, <0 West Hem) [1/100 deg]
-        restart_msg.altitude = ;       //!< -1000 to 18300 [m]
+        restart_msg.utc_year = utc_year;        //!< >=1980
+        restart_msg.utc_month = utc_month;      //!< 1-12
+        restart_msg.utc_day = utc_day;          //!< 1-31
+        restart_msg.utc_hour = utc_hour;        //!< 0-23
+        restart_msg.utc_minute = utc_minute;    //!< 0-59
+        restart_msg.utc_second = utc_second;    //!< 0-59
+        restart_msg.latitude = latitude;        //!< -9000 to 9000 (>0 North Hem, <0 South Hem) [1/100 deg]
+        restart_msg.longitude = longitude;      //!< -18000 to 18000 (>0 East Hem, <0 West Hem) [1/100 deg]
+        restart_msg.altitude = altitude;        //!< -1000 to 18300 [m]
         restart_msg.footer.checksum = 0;
         restart_msg.footer.end1 = SKYTRAQ_END_BYTE_1;
         restart_msg.footer.end2 = SKYTRAQ_END_BYTE_2;
@@ -398,6 +402,43 @@ bool Skytraq::RestartReceiver(Skytraq::StartMode start_mode) {
         output << "Error in Skytraq::RestartReceiver(): " << e.what();
         log_error_(output.str());
         return false;
+    }
+}
+
+void Skytraq::HotRestartReceiver(uint16_t utc_year, uint8_t utc_month, uint8_t utc_day, 
+                                uint8_t utc_hour, uint8_t utc_minute, uint8_t utc_second,
+                                int16_t latitude, int16_t longitude, int16_t altitude) 
+{
+    try {
+        RestartReceiver(HOT_START, utc_year, utc_month, utc_day, utc_hour, utc_minute, 
+                        utc_second, latitude, longitude, altitude);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::HotRestartReceiver(): " << e.what();
+        log_error_(output.str());
+        return 0;
+    }
+}
+void Skytraq::WarmRestartReceiver()
+{
+    try {
+        RestartReceiver(WARM_START);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::WarmRestartReceiver(): " << e.what();
+        log_error_(output.str());
+        return 0;
+    }
+}
+void Skytraq::ColdRestartReceiver()
+{
+    try {
+        RestartReceiver(COLD_START);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::ColdRestartReceiver(): " << e.what();
+        log_error_(output.str());
+        return 0;
     }
 }
 
