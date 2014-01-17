@@ -543,6 +543,53 @@ bool Skytraq::ConfigureSerialPort(uint8_t com_port, uint8_t baudrate)
     }
 }
 
+
+bool Skytraq::ConfigureNmeaIntervals(uint8_t gga_interval, uint8_t gsa_interval, 
+                                    uint8_t gsv_interval, uint8_t gll_interval, 
+                                    uint8_t rcm_interval, uint8_t vtg_interval, 
+                                    uint8_t zda_interval) 
+{
+    try {
+        ConfigureNmeaIntervals configure_nmea_intervals;        
+        configure_nmea_intervals.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        configure_nmea_intervals.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        configure_nmea_intervals.header.payload_length = CONFIGURE_NMEA_INTERVALS_PAYLOAD_LENGTH;
+        configure_nmea_intervals.message_id = CFG_NMEA;
+        configure_nmea_intervals.gga_interval = gga_interval;   //!< [sec]
+        configure_nmea_intervals.gsa_interval = gsa_interval;   //!< [sec]
+        configure_nmea_intervals.gsv_interval = gsv_interval;   //!< [sec]
+        configure_nmea_intervals.gll_interval = gll_interval;   //!< [sec]
+        configure_nmea_intervals.rcm_interval = rcm_interval;   //!< [sec]
+        configure_nmea_intervals.vtg_interval = vtg_interval;   //!< [sec]
+        configure_nmea_intervals.zda_interval = zda_interval;   //!< [sec]
+        configure_nmea_intervals.attributes = UPDATE_TO_SRAM_AND_FLASH;
+        configure_nmea_intervals.footer.end1 = SKYTRAQ_END_BYTE_1;
+        configure_nmea_intervals.footer.end2 = SKYTRAQ_END_BYTE_2;
+
+        unsigned char* msg_ptr = (unsigned char*)&configure_nmea_intervals;
+        calculateCheckSum(msg_ptr, CONFIGURE_NMEA_INTERVALS_PAYLOAD_LENGTH,
+                          &configure_nmea_intervals.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_NMEA_INTERVALS_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::ConfigureNmeaIntervals(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
+bool Skytraq::DisableNmeaOutput()
+{
+    try {
+        return ConfigureNmeaIntervals(0,0,0,0,0,0,0);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::DisableNmeaOutput(): " << e.what();
+        log_error_(output.str());
+        return false;
+}
+
 // (AID-EPH) Polls for Ephemeris data
 bool Skytraq::PollEphem(uint8_t svid) {
 
