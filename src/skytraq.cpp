@@ -798,70 +798,70 @@ bool Skytraq::ConfigureMessagesOutputRate(skytraq::BinaryOutputRate rate,
 //! GPS Input Message Methods
 /////////////////////////////////////////////////////////////////////////////
 
-
-
-
-
-
-// (AID-EPH) Polls for Ephemeris data
-bool Skytraq::PollEphem(uint8_t svid) {
-
-    if (svid < 0) {
-        log_error_("Error in PollEphem: Invalid input 'svid'");
-        return false;
-    } else if (svid <= MAX_SAT) { // Requests Ephemerides for all SVs
-        if (svid == 0) {
-            log_debug_("Polling for all Ephemerides..");
-        } else {
-            stringstream output;
-            output << "Polling for SV# " << (int) svid << " ephemeris.";
-            log_debug_(output.str());
+bool Skytraq::PollAlmanac(uint8_t prn) 
+{
+    try {
+        if((prn<0)||(prn>32)) {
+            log_error_("Error in PollAlmanac(): Input prn outside of acceptable range.");
+            return false;
         }
-        GetEphemeris get_ephem;
+        GetAlmanac get_almanac;        
+        get_almanac.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        get_almanac.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        get_almanac.header.payload_length = GET_ALMANAC_PAYLOAD_LENGTH;
+        get_almanac.message_id = GET_ALMANAC;
+        get_almanac.prn = prn;
+        get_almanac.footer.end1 = SKYTRAQ_END_BYTE_1;
+        get_almanac.footer.end2 = SKYTRAQ_END_BYTE_2;
 
-        get_ephem.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
-        get_ephem.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
-        get_ephem.header.payload_length = GET_EPHEMERIS_PAYLOAD_LENGTH;
-        get_ephem.message_id = GET_EPHEMERIS;
-        get_ephem.prn = svid;   
-        get_ephem.footer.checksum = 0;
-
-        uint8_t* msg_ptr = (uint8_t*) &get_ephem.message_id;
-        calculateCheckSum(msg_ptr, GET_EPHEMERIS_PAYLOAD_LENGTH,
-                          &get_ephem.footer.checksum);
+        unsigned char* msg_ptr = (unsigned char*)&get_almanac;
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, GET_ALMANAC_PAYLOAD_LENGTH,
+                          &get_almanac.footer.checksum);
         
-        get_ephem.footer.end1 = SKYTRAQ_END_BYTE_1;
-        get_ephem.footer.end2 = SKYTRAQ_END_BYTE_2;
-        
-        return SendMessage(msg_ptr, HEADER_LENGTH 
-                                    + GET_EPHEMERIS_PAYLOAD_LENGTH 
-                                    + FOOTER_LENGTH);
-
-    } else {
-        log_error_("In Skytraq::PollEphem(): Invalid input 'svid'");
+        return SendMessage(msg_ptr,HEADER_LENGTH+GET_ALMANAC_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::PollAlmanac(): " << e.what();
+        log_error_(output.str());
         return false;
     }
 }
 
-// (AID-ALM) Polls for Almanac Data
-bool Skytraq::PollAlmanac(int8_t svid) {
+bool Skytraq::PollEphemeris(uint8_t prn)
+{
+    try {
+        if((prn<0)||(prn>32)) {
+            log_error_("Error in PollEphemeris(): Input prn outside of acceptable range.");
+            return false;
+        }
+        GetEphemeris get_ephemeris;        
+        get_ephemeris.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        get_ephemeris.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        get_ephemeris.header.payload_length = GET_EPHEMERIS_PAYLOAD_LENGTH;
+        get_ephemeris.message_id = get_ephemeris;
+        get_ephemeris.prn = prn;
+        get_ephemeris.footer.end1 = SKYTRAQ_END_BYTE_1;
+        get_ephemeris.footer.end2 = SKYTRAQ_END_BYTE_2;
 
-    if (svid < -1) {
-        log_error_("Error in PollAlmanac: Invalid input 'svid'");
-        return 0;
-    } else if (svid == -1) { // Requests Almanac Data for all SVs
-        log_debug_("Polling for all Almanac Data..");
-        return PollMessage(MSG_CLASS_AID, MSG_ID_AID_ALM);
-    } else if (svid > 0) { // Requests Almanac Data for a single SV
-        stringstream output;
-        output << "Polling for SV# " << (int) svid << " Almanac Data..";
-        log_debug_(output.str());
-        return PollMessageIndSV(MSG_CLASS_AID, MSG_ID_AID_ALM, (uint8_t) svid);
-    } else {
-        log_error_("Error in PollAlmanac: Invalid input 'svid'");
-        return 0;
+        unsigned char* msg_ptr = (unsigned char*)&get_ephemeris;
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, GET_EPHEMERIS_PAYLOAD_LENGTH,
+                          &get_ephemeris.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+GET_EPHEMERIS_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::PollEphemeris(): " << e.what();
+        log_error_(output.str());
+        return false;
     }
 }
+
+
+
+
+
+
+
 
 
 

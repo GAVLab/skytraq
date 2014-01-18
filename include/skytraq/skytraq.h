@@ -161,6 +161,9 @@ public:
                                 skytraq::DisableEnable receiver_state_message, 
                                 skytraq::DisableEnable subframe_buffer_message);
     
+    //! GPS Input Message Methods
+    bool PollAlmanac(uint8_t prn);
+    
 
     //////////////////////////////////////////////////////
     // Aiding Data Polling Messages
