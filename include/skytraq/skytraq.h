@@ -163,7 +163,9 @@ public:
     
     //! GPS Input Message Methods
     bool PollAlmanac(uint8_t prn);
-    
+    bool PollEphemeris(uint8_t prn);
+    bool SetEphemeris(uint16_t svid, skytraq::Subframe subframe1, 
+                        skytraq::Subframe subframe2, skytraq::Subframe subframe3);
 
     //////////////////////////////////////////////////////
     // Aiding Data Polling Messages

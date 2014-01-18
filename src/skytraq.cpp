@@ -856,6 +856,39 @@ bool Skytraq::PollEphemeris(uint8_t prn)
     }
 }
 
+bool Skytraq::SetEphemeris(uint16_t svid, skytraq::Subframe subframe1, 
+                            skytraq::Subframe subframe2, skytraq::Subframe subframe3)
+{
+    try {
+        if((prn<0)||(prn>32)) {
+            log_error_("Error in PollEphemeris(): Input prn outside of acceptable range.");
+            return false;
+        }
+        GetEphemeris get_ephemeris;        
+        get_ephemeris.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        get_ephemeris.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        get_ephemeris.header.payload_length = GET_EPHEMERIS_PAYLOAD_LENGTH;
+        get_ephemeris.message_id = GET_EPHEMERIS;
+        get_ephemeris.prn = svid;
+        get_ephemeris.subframe1 = subframe1;
+        get_ephemeris.subframe2 = subframe2;
+        get_ephemeris.subframe3 = subframe3;
+        get_ephemeris.footer.end1 = SKYTRAQ_END_BYTE_1;
+        get_ephemeris.footer.end2 = SKYTRAQ_END_BYTE_2;
+
+        unsigned char* msg_ptr = (unsigned char*)&get_ephemeris;
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, GET_EPHEMERIS_PAYLOAD_LENGTH,
+                          &get_ephemeris.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+GET_EPHEMERIS_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::SetEphemeris(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
 
 
 
