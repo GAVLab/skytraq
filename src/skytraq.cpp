@@ -867,7 +867,7 @@ bool Skytraq::SetEphemeris(uint16_t svid, skytraq::Subframe subframe1,
         GetEphemeris get_ephemeris;        
         get_ephemeris.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         get_ephemeris.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
-        get_ephemeris.header.payload_length = GET_EPHEMERIS_PAYLOAD_LENGTH;
+        get_ephemeris.header.payload_length = EPHEMERIS_PAYLOAD_LENGTH;
         get_ephemeris.message_id = GET_EPHEMERIS;
         get_ephemeris.prn = svid;
         get_ephemeris.subframe1 = subframe1;
@@ -877,13 +877,40 @@ bool Skytraq::SetEphemeris(uint16_t svid, skytraq::Subframe subframe1,
         get_ephemeris.footer.end2 = SKYTRAQ_END_BYTE_2;
 
         unsigned char* msg_ptr = (unsigned char*)&get_ephemeris;
-        calculateCheckSum(msg_ptr+HEADER_LENGTH, GET_EPHEMERIS_PAYLOAD_LENGTH,
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, EPHEMERIS_PAYLOAD_LENGTH,
                           &get_ephemeris.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+GET_EPHEMERIS_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+EPHEMERIS_PAYLOAD_LENGTH+FOOTERLENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::SetEphemeris(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
+// Send AID-EPH to Receiver
+bool Skytraq::SetEphemerides(skytraq::Ephemerides ephemerides)
+{
+    try {
+        bool sent_ephem [32];
+        for (uint8_t prn_index = 1; prn_index <= 32; prn_index++) {
+            if (ephemerides.ephemeris[prn_index].header.payload_length == EPHEMERIS_PAYLOAD_LENGTH) {
+                uint8_t* msg_ptr = (uint8_t*) &ephemerides.ephemeris[prn_index];
+                calculateCheckSum(msg_ptr + HEADER_LENGTH, EPHEMERIS_PAYLOAD_LENGTH,
+                                    ephemerides.ephemeris[prn_index].footer.checksum);
+                sent_ephem[prn_index] = SendMessage(msg_ptr, HEADER_LENGTH
+                                                        +EPHEMERIS_PAYLOAD_LENGTH
+                                                        +FOOTER_LENGTH);
+
+            } else { // not a full ephemeris message
+                
+            }
+        }
+        return true;
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::SetEphemerides(): " << e.what();
         log_error_(output.str());
         return false;
     }
@@ -1041,133 +1068,6 @@ bool Skytraq::QueryNavigationMode()
     }
 }
 
-
-
-// // Poll Port Configuration
-// void Skytraq::PollPortConfiguration(uint8_t port_identifier)
-// { // Port identifier = 3 for USB (default value if left blank)
-//   //                 = 1 or 2 for UART
-// 	try {
-// 		uint8_t message[9];
-// 		message[0]=UBX_SYNC_BYTE_1;
-// 		message[1]=UBX_SYNC_BYTE_2;
-// 		message[2]=MSG_CLASS_CFG;
-// 		message[3]=MSG_ID_CFG_PRT;
-// 		message[4]=1;
-// 		message[5]=0;
-// 		message[6]=port_identifier;         //Port identifier for USB Port (3)
-// 		message[7]=0;                       // Checksum A
-// 		message[8]=0;                       // Checksum B
-
-// 		unsigned char* msg_ptr = (unsigned char*)&message;
-// 		calculateCheckSum(msg_ptr+2,5,msg_ptr+7);
-
-// 		serial_port_->write(msg_ptr, sizeof(message));
-// 		log_info_("Polling for Port Protocol Configuration.");
-// 	} catch (std::exception &e) {
-// 		std::stringstream output;
-// 		output << "Error polling Skytraq port configuration: " << e.what();
-// 		log_error_(output.str());
-// 	}
-// }
-
-//////////////////////////////////////////////////////////////
-// Functions to  Aiding Data to Receiver
-//////////////////////////////////////////////////////////////
-
-
-// Send AID-INI to Receiver
-bool Skytraq::SendAidIni(AidIni ini)
-{  
-    //stringstream output;
-	try {
-		unsigned char* msg_ptr = (unsigned char*)&ini;
-		calculateCheckSum(msg_ptr + 2, PAYLOAD_LENGTH_AID_INI + 4,
-							ini.checksum);
-
-		// Check that provided ini message is correct size before sending
-		if (sizeof(ini) == FULL_LENGTH_AID_INI)
-		{
-			bool sent_ini = SendMessage(msg_ptr, FULL_LENGTH_AID_INI);
-			//output << "Sending AID-INI to receiver.";
-			//log_debug_(output.str());
-			return true;
-		}
-		else
-		{
-			//output << "Provided AID-INI message not of correct length.";
-			//log_error_(output.str());
-			return false;
-		}
-	} catch (std::exception &e) {
-		std::stringstream output;
-		output << "Error sending aid ini data to Skytraq: " << e.what();
-		log_error_(output.str());
-		return false;
-	}
-}
-
-// Send AID-EPH to Receiver
-bool Skytraq::SendAidEphem(Ephemerides ephems)
-{
-	try {
-		bool sent_ephem [32];
-
-		for (uint8_t prn_index = 1; prn_index <= 32; prn_index++) {
-			//stringstream output;
-			if (ephems.ephemsv[prn_index].header.payload_length == PAYLOAD_LENGTH_AID_EPH_WITH_DATA) {
-				//output << "Sending AID-EPH for PRN # "
-						//<< (int) ephems.ephemsv[prn_index].svprn << " ..";
-				uint8_t* msg_ptr = (uint8_t*) &ephems.ephemsv[prn_index];
-				calculateCheckSum(msg_ptr + 2, PAYLOAD_LENGTH_AID_EPH_WITH_DATA + 4,
-									ephems.ephemsv[prn_index].checksum);
-				sent_ephem[prn_index] = SendMessage(msg_ptr, FULL_LENGTH_AID_EPH_WITH_DATA);
-
-			} else { // not a full ephemeris message
-				//output << "No AID-EPH data for PRN # " << (int) prn_index << " ..";
-			}
-			//log_debug_(output.str());
-		}
-		return true;
-	} catch (std::exception &e) {
-		std::stringstream output;
-		output << "Error sending ephemeris data to Skytraq: " << e.what();
-		log_error_(output.str());
-		return false;
-	}
-}
-
-// Send AID-ALM to Receiver
-bool Skytraq::SendAidAlm(Almanac almanac) {
-
-	try {
-		bool sent_alm [32];
-
-		for (uint8_t prn_index = 1; prn_index <= 32; prn_index++) {
-			//stringstream output;
-
-			if (almanac.almsv[prn_index].header.payload_length == PAYLOAD_LENGTH_AID_ALM_WITH_DATA) {
-				//output << "Sending AID-ALM for PRN # "
-						//<< (int) almanac.almsv[prn_index].svprn << " ..";
-				uint8_t* msg_ptr = (uint8_t*) &almanac.almsv[prn_index];
-				calculateCheckSum(msg_ptr + 2, PAYLOAD_LENGTH_AID_ALM_WITH_DATA + 4,
-									almanac.almsv[prn_index].checksum);
-				sent_alm[prn_index] = SendMessage(msg_ptr, FULL_LENGTH_AID_ALM_WITH_DATA);
-			}
-			else {
-				//output << "No AID-ALM data for PRN # " << (int) prn_index << " ..";
-			}
-			//log_debug_(output.str());
-		}
-		return true;
-
-	} catch (std::exception &e) {
-		std::stringstream output;
-		output << "Error sending almanac data to Skytraq: " << e.what();
-		log_error_(output.str());
-		return false;
-	}
-}
 
 //////////////////////////////////////////////////////////////
 //

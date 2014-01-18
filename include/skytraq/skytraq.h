@@ -166,27 +166,13 @@ public:
     bool PollEphemeris(uint8_t prn);
     bool SetEphemeris(uint16_t svid, skytraq::Subframe subframe1, 
                         skytraq::Subframe subframe2, skytraq::Subframe subframe3);
+    bool SetEphemerides(skytraq::Ephemerides ephemerides);
     bool EnableWAAS();
     bool DisableWAAS();
     bool QueryWAASConfiguration();
     bool SetCarNavigationMode();
     bool SetPedestrianNavigationMode();
     bool QueryNavigationMode();
-    
-    //////////////////////////////////////////////////////
-    // Aiding Data Polling Messages
-    //////////////////////////////////////////////////////
-    bool PollMessage(uint8_t class_id, uint8_t msg_id);
-    bool PollMessageIndSV(uint8_t class_id, uint8_t msg_id, uint8_t svid);
-    bool PollEphem(uint8_t svid = 0);
-    bool PollAlmanac(int8_t svid = -1);
-
-    //////////////////////////////////////////////////////
-    // Send Aiding Data to Receiver
-    //////////////////////////////////////////////////////
-    bool SendAidIni(AidIni ini);
-    bool SendAidEphem(Ephemerides ephems);
-    bool SendAidAlm(Almanac almanac);
 
     //////////////////////////////////////////////////////
     // Set Callback Methods

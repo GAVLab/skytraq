@@ -330,7 +330,12 @@ PACK(
         SkytraqFooter footer;
     }
 );
-
+PACK(
+    struct Ephemerides
+    {
+        SetEphemeris ephemeris[MAX_SAT];
+    };
+);
 //! (0x37) Configure WAAS
 PACK(
     struct ConfigureWAAS
