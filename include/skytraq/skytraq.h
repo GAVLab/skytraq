@@ -166,7 +166,13 @@ public:
     bool PollEphemeris(uint8_t prn);
     bool SetEphemeris(uint16_t svid, skytraq::Subframe subframe1, 
                         skytraq::Subframe subframe2, skytraq::Subframe subframe3);
-
+    bool EnableWAAS();
+    bool DisableWAAS();
+    bool QueryWAASConfiguration();
+    bool SetCarNavigationMode();
+    bool SetPedestrianNavigationMode();
+    bool QueryNavigationMode();
+    
     //////////////////////////////////////////////////////
     // Aiding Data Polling Messages
     //////////////////////////////////////////////////////

@@ -889,12 +889,157 @@ bool Skytraq::SetEphemeris(uint16_t svid, skytraq::Subframe subframe1,
     }
 }
 
+bool Skytraq::EnableWAAS()
+{
+    try {
+        ConfigureWAAS config_waas;        
+        config_waas.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        config_waas.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        config_waas.header.payload_length = CONFIGURE_WAAS_PAYLOAD_LENGTH;
+        config_waas.message_id = CFG_WAAS;
+        config_waas.enable_waas = ENABLE;
+        config_waas.attributes = UPDATE_TO_SRAM_AND_FLASH;
+        config_waas.footer.end1 = SKYTRAQ_END_BYTE_1;
+        config_waas.footer.end2 = SKYTRAQ_END_BYTE_2;
 
+        unsigned char* msg_ptr = (unsigned char*)&config_waas;
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_WAAS_PAYLOAD_LENGTH,
+                          &config_waas.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_WAAS_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::EnableWAAS(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
 
+bool Skytraq::DisableWAAS()
+{
+    try {
+        ConfigureWAAS config_waas;        
+        config_waas.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        config_waas.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        config_waas.header.payload_length = CONFIGURE_WAAS_PAYLOAD_LENGTH;
+        config_waas.message_id = CFG_WAAS;
+        config_waas.enable_waas = DISABLE;
+        config_waas.attributes = UPDATE_TO_SRAM_AND_FLASH;
+        config_waas.footer.end1 = SKYTRAQ_END_BYTE_1;
+        config_waas.footer.end2 = SKYTRAQ_END_BYTE_2;
 
+        unsigned char* msg_ptr = (unsigned char*)&config_waas;
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_WAAS_PAYLOAD_LENGTH,
+                          &config_waas.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_WAAS_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::DisableWAAS(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
 
+bool Skytraq::QueryWAASConfiguration()
+{
+    try {
+        QueryWAAS query_waas;        
+        query_waas.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        query_waas.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        query_waas.header.payload_length = QUERY_WAAS_PAYLOAD_LENGTH;
+        query_waas.message_id = QUERY_WAAS;
+        query_waas.footer.end1 = SKYTRAQ_END_BYTE_1;
+        query_waas.footer.end2 = SKYTRAQ_END_BYTE_2;
 
+        unsigned char* msg_ptr = (unsigned char*)&query_waas;
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, QUERY_WAAS_PAYLOAD_LENGTH,
+                          &query_waas.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+QUERY_WAAS_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::QueryWAASConfiguration(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
 
+bool Skytraq::SetCarNavigationMode()
+{
+    try {
+        ConfigureNavigationMode configure_nav_mode;        
+        configure_nav_mode.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        configure_nav_mode.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        configure_nav_mode.header.payload_length = CONFIGURE_NAVIGATION_MODE_PAYLOAD_LENGTH;
+        configure_nav_mode.message_id = CFG_NAV_MODE;
+        configure_nav_mode.nav_mode = CAR;
+        configure_nav_mode.attributes = UPDATE_TO_SRAM_AND_FLASH;
+        configure_nav_mode.footer.end1 = SKYTRAQ_END_BYTE_1;
+        configure_nav_mode.footer.end2 = SKYTRAQ_END_BYTE_2;
+
+        unsigned char* msg_ptr = (unsigned char*)&configure_nav_mode;
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_NAVIGATION_MODE_PAYLOAD_LENGTH,
+                          &configure_nav_mode.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_NAVIGATION_MODE_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::SetCarNavigationMode(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
+bool Skytraq::SetPedestrianNavigationMode()
+{
+    try {
+        ConfigureNavigationMode configure_nav_mode;        
+        configure_nav_mode.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        configure_nav_mode.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        configure_nav_mode.header.payload_length = CONFIGURE_NAVIGATION_MODE_PAYLOAD_LENGTH;
+        configure_nav_mode.message_id = CFG_NAV_MODE;
+        configure_nav_mode.nav_mode = PEDESTRIAN;
+        configure_nav_mode.attributes = UPDATE_TO_SRAM_AND_FLASH;
+        configure_nav_mode.footer.end1 = SKYTRAQ_END_BYTE_1;
+        configure_nav_mode.footer.end2 = SKYTRAQ_END_BYTE_2;
+
+        unsigned char* msg_ptr = (unsigned char*)&configure_nav_mode;
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_NAVIGATION_MODE_PAYLOAD_LENGTH,
+                          &configure_nav_mode.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_NAVIGATION_MODE_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::SetCarNavigationMode(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
+
+bool Skytraq::QueryNavigationMode()
+{
+    try {
+        QueryNavigationMode query_nav_mode;        
+        query_nav_mode.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        query_nav_mode.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        query_nav_mode.header.payload_length = QUERY_NAVIGATION_MODE_PAYLOAD_LENGTH;
+        query_nav_mode.message_id = QUERY_WAAS;
+        query_nav_mode.footer.end1 = SKYTRAQ_END_BYTE_1;
+        query_nav_mode.footer.end2 = SKYTRAQ_END_BYTE_2;
+
+        unsigned char* msg_ptr = (unsigned char*)&query_nav_mode;
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, QUERY_NAVIGATION_MODE_PAYLOAD_LENGTH,
+                          &query_nav_mode.footer.checksum);
+        
+        return SendMessage(msg_ptr,HEADER_LENGTH+QUERY_NAVIGATION_MODE_PAYLOAD_LENGTH+FOOTERLENGTH);
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::QueryNavigationMode(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
 
 
 
