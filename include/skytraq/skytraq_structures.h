@@ -47,12 +47,12 @@ namespace skytraq {
 #define QUERY_NAVIGATION_MODE_PAYLOAD_LENGTH 1 //!< [bytes]
 #define SOFTWARE_VERSION_PAYLOAD_LENGTH 14 //!< [bytes]
 #define SOFTWARE_CRC_PAYLOAD_LENGTH 4 //!< [bytes]
-#define ACK_PAYLOAD_LENGTH 2; //!< [bytes]
-#define NACK_PAYLOAD_LENGTH 2; //!< [bytes]
+#define ACK_PAYLOAD_LENGTH 2 //!< [bytes]
+#define NACK_PAYLOAD_LENGTH 2 //!< [bytes]
 #define POSITION_UPDATE_RATE_PAYLOAD_LENGTH 2 //!< [bytes]
-#define ALMANAC_PAYLOAD_LENGTH 28; //!< [bytes]
-#define EPHEMERIS_PAYLOAD_LENGTH 87; //!< [bytes]
-#define MEASUREMENT_TIME_PAYLOAD_LENGTH 10; //!< [bytes]
+#define ALMANAC_PAYLOAD_LENGTH 28 //!< [bytes]
+#define EPHEMERIS_PAYLOAD_LENGTH 87 //!< [bytes]
+#define MEASUREMENT_TIME_PAYLOAD_LENGTH 10 //!< [bytes]
 #define RECEIVER_NAV_STATUS_PAYLOAD_LENGTH 81 //!< [bytes]
 #define SUBFRAME_BUFFER_DATA_PAYLOAD_LENGTH 33 //!< [bytes]
 
@@ -334,7 +334,7 @@ PACK(
     struct Ephemerides
     {
         SetEphemeris ephemeris[MAX_SAT];
-    };
+    }
 );
 //! (0x37) Configure WAAS
 PACK(
@@ -681,7 +681,7 @@ enum Message_ID
     //! Output GPS Messages
     GPS_WAAS_STATUS = 179,      //!< (0xB3) GPS WAAS status
     GPS_NAV_MODE = 180,         //!< (0xB5) GPS Navigation mode
-    GPS_ALMANAC = 134,          //!< (0x87) GPS Almanac data
+    GPS_ALMANAC = 135,          //!< (0x87) GPS Almanac data
     GPS_EPHEMERIS = 177,        //!< (0xB1) GPS Ephemeris data
     MEAS_TIME = 220,            //!< (0xDC) Measurement time information
     RAW_MEAS = 221,             //!< (0xDD) Raw Channel measurements

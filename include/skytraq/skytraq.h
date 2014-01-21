@@ -128,13 +128,13 @@ public:
     
     //! System Input Message Methods
     bool SendMessage(uint8_t *msg_ptr, size_t length);
-    bool RestartReceiver(Skytraq::StartMode start_mode=NO_MODE_CHANGE, uint16_t utc_year=0, 
-                        uint8_t utc_month=0, uint8_t utc_day=0, uint8_t utc_hour=0, 
+    bool RestartReceiver(skytraq::StartMode start_mode, uint16_t utc_year=0,
+                        uint8_t utc_month=0, uint8_t utc_day=0, uint8_t utc_hour=0,
                         uint8_t utc_minute=0, uint8_t utc_second=0, int16_t latitude=0,
                         int16_t longitude=0, int16_t altitude=0);
-    void HotRestartReceiver(uint16_t utc_year, uint8_t utc_month, uint8_t utc_day, 
-                            uint8_t utc_hour, uint8_t utc_minute, uint8_t utc_second,
-                            int16_t latitude, int16_t longitude, int16_t altitude);
+    void HotRestartReceiver(uint16_t utc_year=0, uint8_t utc_month=0, uint8_t utc_day=0,
+                            uint8_t utc_hour=0, uint8_t utc_minute=0, uint8_t utc_second=0,
+                            int16_t latitude=0, int16_t longitude=0, int16_t altitude=0);
     void WarmRestartReceiver();
     void ColdRestartReceiver();
     bool QuerySoftwareVersion();
@@ -146,10 +146,9 @@ public:
                                     uint8_t rcm_interval=0, uint8_t vtg_interval=0, 
                                     uint8_t zda_interval=0);
     bool ConfigureOutputFormat(OutputType output_type);
-    void SetOutputFormatBinary();
+    bool SetOutputFormatToBinary();
     bool SetOutputFormatToNmea();
     bool DisableAllOutput();
-    bool DisableNmeaOutput();
     bool EnablePowerSaveMode();
     bool DisablePowerSaveMode();
     bool ConfigurePositionUpdateRate(uint8_t update_rate);
@@ -178,21 +177,21 @@ public:
     // Set Callback Methods
     //////////////////////////////////////////////////////
     //! System Output Message Callbacks
-    void set_software_version_callback_(SoftwareVersionCallback callback){software_version_callback_=callback;};
-    void set_software_crc_callback_(SoftwareCRCCallback callback){software_crc_callback_=callback;};
-    void set_ack_callback_(AckCallback callback){ack_callback_=callback;};
-    void set_nack_callback_(NackCallback callback){nack_callback_=callback;};
-    void set_pos_update_rate_callback_(PositionUpdateRateCallback callback){pos_update_rate_callback_=callback};
+    void set_software_version_callback_(SoftwareVersionCallback callback){software_version_callback_=callback;}
+    void set_software_crc_callback_(SoftwareCRCCallback callback){software_crc_callback_=callback;}
+    void set_ack_callback_(AckCallback callback){ack_callback_=callback;}
+    void set_nack_callback_(NackCallback callback){nack_callback_=callback;}
+    void set_pos_update_rate_callback_(PositionUpdateRateCallback callback){pos_update_rate_callback_=callback;}
     //! GPS Output Message Callbacks
-    void set_waas_status_callback_(WaasStatusCallback callback){waas_status_callback_=callback};
-    void set_nav_mode_callback_(NavigationModeCallback callback){nav_mode_callback_=callback};
-    void set_almanac_callback_(AlmanacCallback callback){almanac_callback_=callback;};
-    void set_ephemeris_callback_(EphemerisCallback callback){ephemeris_callback_=callback;};
-    void set_measurement_time_callback_(MeasurementTimeCallback callback){measurement_time_callback_=callback;};;
-    void set_raw_measurement_callback_(RawMeasurementsCallback callback){raw_measurement_callback_=callback;};
-    void set_channel_status_callback_(ChannelStatusCallback callback){channel_status_callback_=callback;};
-    void set_receiver_nav_status_callback_(ReceiverNavStatusCallback callback){receiver_nav_status_callback_=callback;};
-    void set_subframe_buffer_data_callback_(SubframeBufferDataCallback callback){subframe_buffer_data_callback_=callback;};
+    void set_waas_status_callback_(WaasStatusCallback callback){waas_status_callback_=callback;}
+    void set_nav_mode_callback_(NavigationModeCallback callback){nav_mode_callback_=callback;}
+    void set_almanac_callback_(AlmanacCallback callback){almanac_callback_=callback;}
+    void set_ephemeris_callback_(EphemerisCallback callback){ephemeris_callback_=callback;}
+    void set_measurement_time_callback_(MeasurementTimeCallback callback){measurement_time_callback_=callback;}
+    void set_raw_measurement_callback_(RawMeasurementsCallback callback){raw_measurement_callback_=callback;}
+    void set_channel_status_callback_(ChannelStatusCallback callback){channel_status_callback_=callback;}
+    void set_receiver_nav_status_callback_(ReceiverNavStatusCallback callback){receiver_nav_status_callback_=callback;}
+    void set_subframe_buffer_data_callback_(SubframeBufferDataCallback callback){subframe_buffer_data_callback_=callback;}
 
     void calculateCheckSum(uint8_t* in, size_t length, uint8_t* cs);
 private:

@@ -49,61 +49,61 @@ inline void DefaultErrorMsgCallback(const std::string &msg) {
 
 
 //! System Output Message Default Callbacks
-inline void DefaultSoftwareVersionCallback(SoftwareVersion& software_version, double& timestamp){
+inline void DefaultSoftwareVersionCallback(skytraq::SoftwareVersion& software_version, double& timestamp){
 
 }
 
-inline void DefaultSoftwareCrcCallback(SoftwareCRC& software_crc, double& timestamp){
+inline void DefaultSoftwareCrcCallback(skytraq::SoftwareCRC& software_crc, double& timestamp){
 
 }
 
-inline void DefaultAckCallback(Ack& ack, double& timestamp){
+inline void DefaultAckCallback(skytraq::Ack& ack, double& timestamp){
 
 }
 
-inline void DefaultNackCallback(Nack& nack, double& timestamp){
+inline void DefaultNackCallback(skytraq::Nack& nack, double& timestamp){
 
 }
 
-inline void DefaultPosUpdateRateCallback(PositionUpdateRate& pos_update_rate, double& timestamp){
+inline void DefaultPosUpdateRateCallback(skytraq::PositionUpdateRate& pos_update_rate, double& timestamp){
 
 }
 
 
 //! GPS Output Message Default Callbacks
-inline void DefaultWaasStatusCallback(WaasStatus& waas_status, double& timestamp){
+inline void DefaultWaasStatusCallback(skytraq::WaasStatus& waas_status, double& timestamp){
 
 }
 
-inline void DefaultNavigationModeCallback(NavigationMode& nav_mode, double& timestamp){
+inline void DefaultNavigationModeCallback(skytraq::NavigationMode& nav_mode, double& timestamp){
 
 }
 
-inline void DefaultAlmanacCallback(Almanac& almanac, double& timestamp){
+inline void DefaultAlmanacCallback(skytraq::Almanac& almanac, double& timestamp){
 
 }
 
-inline void DefaultEphemerisCallback(Ephemeris& ephemeris, double& timestamp){
+inline void DefaultEphemerisCallback(skytraq::Ephemeris& ephemeris, double& timestamp){
 
 }
 
-inline void DefaultMeasurementTimeCallback(MeasurementTime& measurement_time, double& timestamp){
+inline void DefaultMeasurementTimeCallback(skytraq::MeasurementTime& measurement_time, double& timestamp){
 
 }
 
-inline void DefaultRawMeasurementCallback(RawMeasurements& raw_measurements, double& timestamp){
+inline void DefaultRawMeasurementCallback(skytraq::RawMeasurements& raw_measurements, double& timestamp){
 
 }
 
-inline void DefaultChannelStatusCallback(ChannelStatusCallback& channel_status, double& timestamp){
+inline void DefaultChannelStatusCallback(skytraq::ChannelStatus& channel_status, double& timestamp){
 
 }
 
-inline void DefaultNavStatusCallback(ReceiverNavStatus& nav_status, double& timestamp){
+inline void DefaultNavStatusCallback(skytraq::ReceiverNavStatus& nav_status, double& timestamp){
 
 }
 
-inline void DefaultSubframeBufferDataCallback(SubframeBufferData& subframe_buffer_data, double& timestamp){
+inline void DefaultSubframeBufferDataCallback(skytraq::SubframeBufferData& subframe_buffer_data, double& timestamp){
 
 }
 
@@ -205,8 +205,7 @@ bool Skytraq::Ping(int num_attempts) {
         while ((num_attempts--) > 0) {
             log_info_("Searching for Skytraq receiver...");
             // request version information
-
-            PollSoftwareVersion();
+            QuerySoftwareVersion();
 
             boost::this_thread::sleep(boost::posix_time::milliseconds(1000));
 
@@ -217,7 +216,7 @@ bool Skytraq::Ping(int num_attempts) {
             //std::cout << "bytes read: " << (int)bytes_read << std::endl;
             //std::cout << dec << result << std::endl;
 
-            if (bytes_read < 8) {
+            if (bytes_read < (HEADER_LENGTH+SOFTWARE_VERSION_PAYLOAD_LENGTH+FOOTER_LENGTH)) {
                 stringstream output;
                 output << "Only read " << bytes_read
                         << " bytes in response to ping.";
@@ -225,51 +224,36 @@ bool Skytraq::Ping(int num_attempts) {
                 continue;
             }
 
-            uint16_t length;
             // search through result for version message
-            for (int ii = 0; ii < (bytes_read - 8); ii++) {
+            size_t ack_message_length = HEADER_LENGTH+ACK_PAYLOAD_LENGTH+FOOTER_LENGTH;
+            for (int ii = 0; ii < (bytes_read-ack_message_length); ii++) {
                 //std::cout << hex << (unsigned int)result[ii] << std::endl;
                 if (result[ii] == SKYTRAQ_SYNC_BYTE_1) {
                     if (result[ii + 1] != SKYTRAQ_SYNC_BYTE_2)
                         continue;
-                    if (result[ii + 4] != ACK)
+                    if (result[ii + HEADER_LENGTH] != SOFTWARE_CRC)
                         continue;
-                    //std::cout << "length1:" << hex << (unsigned int)result[ii+4] << std::endl;
-                    //std::cout << "length2:" << hex << (unsigned int)result[ii+5] << std::endl;
-                    length = (result[ii + 2]) + (result[ii + 3] << 8);
-                    if (length < ACK_PAYLOAD_LENGTH) {
-                        log_debug_("Incomplete version message received");
-                        //    //return false;
+                    if (result[ii+ack_message_length-2] != SKYTRAQ_END_BYTE_1)
                         continue;
-                    }
-
-                    // string sw_version;
-                    // string hw_version;
-                    // string rom_version;
-                    // sw_version.append((char*) (result + 6));
-                    // hw_version.append((char*) (result + 36));
-                    // //rom_version.append((char*)(result+46));
-                    // log_info_("Skytraq receiver found.");
-                    // log_info_("Software Version: " + sw_version);
-                    // log_info_("Hardware Version: " + hw_version);
-                    // //log_info_("ROM Version: " + rom_version);
+                    if (result[ii+ack_message_length-1] != SKYTRAQ_END_BYTE_2)
+                        continue;
+                    log_info_("Skytraq receiver found.");
+                    // TODO: add version parsing and output
                     return true;
                 }
             }
             stringstream output;
             output << "Read " << bytes_read
-                    << " bytes, but version message not found.";
+               << " bytes, but version message not found.";
             log_debug_(output.str());
-
+            return false;
         }
     } catch (exception &e) {
-        std::stringstream output;
-        output << "Error pinging receiver: " << e.what();
-        log_error_(output.str());
+        std::stringstream output1;
+        output1 << "Error pinging receiver: " << e.what();
+        log_error_(output1.str());
         return false;
     }
-
-    return false;
 }
 
 void Skytraq::Disconnect() {
@@ -337,13 +321,12 @@ bool Skytraq::SendMessage(uint8_t* msg_ptr, size_t length)
 {
     try {
         stringstream output1;
-        //std::cout << length << std::endl;
-        //std::cout << "Message Pointer" << endl;
+        uint8_t message_id;
         //printHex((char*) msg_ptr, length);
         size_t bytes_written;
 
         if ((serial_port_!=NULL)&&(serial_port_->isOpen())) {
-          bytes_written=serial_port_->write(msg_ptr, length);
+            bytes_written=serial_port_->write(msg_ptr, length);
         } else {
             log_error_("Unable to send message. Serial port not open.");
             return false;
@@ -369,7 +352,7 @@ bool Skytraq::SendMessage(uint8_t* msg_ptr, size_t length)
 //////////////////////////////////////////////////////////////////////////////
 // System Input Message Methods
 /////////////////////////////////////////////////////////////////////////////
-bool Skytraq::RestartReceiver(Skytraq::StartMode start_mode, uint16_t utc_year, 
+bool Skytraq::RestartReceiver(skytraq::StartMode start_mode, uint16_t utc_year,
                             uint8_t utc_month, uint8_t utc_day, uint8_t utc_hour, 
                             uint8_t utc_minute, uint8_t utc_second, int16_t latitude,
                             int16_t longitude, int16_t altitude)
@@ -396,7 +379,7 @@ bool Skytraq::RestartReceiver(Skytraq::StartMode start_mode, uint16_t utc_year,
         unsigned char* msg_ptr = (unsigned char*)&restart_msg;
         calculateCheckSum(msg_ptr+HEADER_LENGTH, SYSTEM_RESTART_PAYLOAD_LENGTH,
                           &restart_msg.footer.checksum);
-        return SendMessage(msg_ptr,HEADER_LENGTH+SYSTEM_RESTART_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+SYSTEM_RESTART_PAYLOAD_LENGTH+FOOTER_LENGTH);
 
     } catch (std::exception &e) {
         std::stringstream output;
@@ -417,7 +400,7 @@ void Skytraq::HotRestartReceiver(uint16_t utc_year, uint8_t utc_month, uint8_t u
         std::stringstream output;
         output << "Error in Skytraq::HotRestartReceiver(): " << e.what();
         log_error_(output.str());
-        return 0;
+        return;
     }
 }
 void Skytraq::WarmRestartReceiver()
@@ -428,7 +411,7 @@ void Skytraq::WarmRestartReceiver()
         std::stringstream output;
         output << "Error in Skytraq::WarmRestartReceiver(): " << e.what();
         log_error_(output.str());
-        return 0;
+        return;
     }
 }
 void Skytraq::ColdRestartReceiver()
@@ -439,13 +422,13 @@ void Skytraq::ColdRestartReceiver()
         std::stringstream output;
         output << "Error in Skytraq::ColdRestartReceiver(): " << e.what();
         log_error_(output.str());
-        return 0;
+        return;
     }
 }
 
 bool Skytraq::QuerySoftwareVersion() {
     try {
-        QuerySoftwareVersion query_software_version;        
+        skytraq::QuerySoftwareVersion query_software_version;
         query_software_version.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         query_software_version.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         query_software_version.header.payload_length = QUERY_SOFTWARE_VERSION_PAYLOAD_LENGTH;
@@ -458,7 +441,7 @@ bool Skytraq::QuerySoftwareVersion() {
         calculateCheckSum(msg_ptr+HEADER_LENGTH, QUERY_SOFTWARE_VERSION_PAYLOAD_LENGTH,
                           &query_software_version.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+SYSTEM_RESTART_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+SYSTEM_RESTART_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::QuerySoftwareVersion(): " << e.what();
@@ -469,11 +452,11 @@ bool Skytraq::QuerySoftwareVersion() {
 
 bool Skytraq::QuerySoftwareCrcVersion() {
     try {
-        QuerySoftwareCrcVersion query_software_crc_version;        
+        skytraq::QuerySoftwareCrcVersion query_software_crc_version;
         query_software_crc_version.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         query_software_crc_version.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         query_software_crc_version.header.payload_length = QUERY_SOFTWARE_CRC_VERSION_PAYLOAD_LENGTH;
-        query_software_crc_version.message_id = QUERY_SOFTWARE_CRC_VERSION;
+        query_software_crc_version.message_id = QUERY_SOFTWARE_CRC;
         query_software_crc_version.software_type = SYSTEM_CODE;
         query_software_crc_version.footer.end1 = SKYTRAQ_END_BYTE_1;
         query_software_crc_version.footer.end2 = SKYTRAQ_END_BYTE_2;
@@ -482,7 +465,7 @@ bool Skytraq::QuerySoftwareCrcVersion() {
         calculateCheckSum(msg_ptr+HEADER_LENGTH, QUERY_SOFTWARE_CRC_VERSION_PAYLOAD_LENGTH,
                           &query_software_crc_version.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+SYSTEM_RESTART_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+SYSTEM_RESTART_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::QuerySoftwareCrcVersion(): " << e.what();
@@ -494,7 +477,7 @@ bool Skytraq::QuerySoftwareCrcVersion() {
 bool Skytraq::RestoreFactoryDefaults() 
 {
     try {
-        RestoreFactoryDefaults restore_factory_defaults;        
+        skytraq::RestoreFactoryDefaults restore_factory_defaults;
         restore_factory_defaults.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         restore_factory_defaults.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         restore_factory_defaults.header.payload_length = RESTORE_FACTORY_DEFAULTS_PAYLOAD_LENGTH;
@@ -507,7 +490,7 @@ bool Skytraq::RestoreFactoryDefaults()
         calculateCheckSum(msg_ptr+HEADER_LENGTH, RESTORE_FACTORY_DEFAULTS_PAYLOAD_LENGTH,
                           &restore_factory_defaults.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+RESTORE_FACTORY_DEFAULTS_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+RESTORE_FACTORY_DEFAULTS_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::RestoreFactoryDefaults(): " << e.what();
@@ -519,7 +502,7 @@ bool Skytraq::RestoreFactoryDefaults()
 bool Skytraq::ConfigureSerialPort(uint8_t com_port, uint8_t baudrate) 
 {
     try {
-        ConfigureSerialPort configure_serial_port;        
+        skytraq::ConfigureSerialPort configure_serial_port;
         configure_serial_port.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         configure_serial_port.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         configure_serial_port.header.payload_length = CONFIGURE_SERIAL_PORT_PAYLOAD_LENGTH;
@@ -534,7 +517,7 @@ bool Skytraq::ConfigureSerialPort(uint8_t com_port, uint8_t baudrate)
         calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_SERIAL_PORT_PAYLOAD_LENGTH,
                           &configure_serial_port.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_SERIAL_PORT_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_SERIAL_PORT_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::ConfigureSerialPort(): " << e.what();
@@ -550,7 +533,7 @@ bool Skytraq::ConfigureNmeaIntervals(uint8_t gga_interval, uint8_t gsa_interval,
                                     uint8_t zda_interval) 
 {
     try {
-        ConfigureNmeaIntervals configure_nmea_intervals;        
+        skytraq::ConfigureNmeaIntervals configure_nmea_intervals;
         configure_nmea_intervals.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         configure_nmea_intervals.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         configure_nmea_intervals.header.payload_length = CONFIGURE_NMEA_INTERVALS_PAYLOAD_LENGTH;
@@ -570,7 +553,7 @@ bool Skytraq::ConfigureNmeaIntervals(uint8_t gga_interval, uint8_t gsa_interval,
         calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_NMEA_INTERVALS_PAYLOAD_LENGTH,
                           &configure_nmea_intervals.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_NMEA_INTERVALS_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_NMEA_INTERVALS_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::ConfigureNmeaIntervals(): " << e.what();
@@ -582,7 +565,7 @@ bool Skytraq::ConfigureNmeaIntervals(uint8_t gga_interval, uint8_t gsa_interval,
 bool Skytraq::ConfigureOutputFormat(OutputType output_type) 
 {
     try {
-        ConfigureOutputFormat configure_output_format;        
+        skytraq::ConfigureOutputFormat configure_output_format;
         configure_output_format.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         configure_output_format.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         configure_output_format.header.payload_length = CONFIGURE_OUTPUT_FORMAT_PAYLOAD_LENGTH;
@@ -596,7 +579,7 @@ bool Skytraq::ConfigureOutputFormat(OutputType output_type)
         calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_OUTPUT_FORMAT_PAYLOAD_LENGTH,
                           &configure_output_format.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_OUTPUT_FORMAT_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_OUTPUT_FORMAT_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::ConfigureOutputFormat(): " << e.what();
@@ -641,22 +624,10 @@ bool Skytraq::DisableAllOutput()
     }
 }
 
-bool Skytraq::DisableNmeaOutput()
-{
-    try {
-        return ConfigureOutputFormat(0,0,0,0,0,0,0);
-    } catch (std::exception &e) {
-        std::stringstream output;
-        output << "Error in Skytraq::DisableNmeaOutput(): " << e.what();
-        log_error_(output.str());
-        return false;
-    }
-}
-
 bool Skytraq::EnablePowerSaveMode() 
 {
     try {
-        ConfigurePowerSaveMode configure_power_save_mode;        
+        skytraq::ConfigurePowerSaveMode configure_power_save_mode;
         configure_power_save_mode.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         configure_power_save_mode.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         configure_power_save_mode.header.payload_length = CONFIGURE_POWER_SAVE_MODE_PAYLOAD_LENGTH;
@@ -670,7 +641,7 @@ bool Skytraq::EnablePowerSaveMode()
         calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_POWER_SAVE_MODE_PAYLOAD_LENGTH,
                           &configure_power_save_mode.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_POWER_SAVE_MODE_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_POWER_SAVE_MODE_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::EnablePowerSaveMode(): " << e.what();
@@ -682,7 +653,7 @@ bool Skytraq::EnablePowerSaveMode()
 bool Skytraq::DisablePowerSaveMode() 
 {
     try {
-        ConfigurePowerSaveMode configure_power_save_mode;        
+        skytraq::ConfigurePowerSaveMode configure_power_save_mode;
         configure_power_save_mode.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         configure_power_save_mode.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         configure_power_save_mode.header.payload_length = CONFIGURE_POWER_SAVE_MODE_PAYLOAD_LENGTH;
@@ -696,7 +667,7 @@ bool Skytraq::DisablePowerSaveMode()
         calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_POWER_SAVE_MODE_PAYLOAD_LENGTH,
                           &configure_power_save_mode.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_POWER_SAVE_MODE_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_POWER_SAVE_MODE_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::DisablePowerSaveMode(): " << e.what();
@@ -708,7 +679,7 @@ bool Skytraq::DisablePowerSaveMode()
 bool Skytraq::ConfigurePositionUpdateRate(uint8_t update_rate) 
 {
     try {
-        ConfigurePositionUpdateRate configure_position_update_rate;        
+        skytraq::ConfigurePositionUpdateRate configure_position_update_rate;
         configure_position_update_rate.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         configure_position_update_rate.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         configure_position_update_rate.header.payload_length = CONFIGURE_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH;
@@ -722,7 +693,7 @@ bool Skytraq::ConfigurePositionUpdateRate(uint8_t update_rate)
         calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH,
                           &configure_position_update_rate.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::ConfigurePositionUpdateRate(): " << e.what();
@@ -734,7 +705,7 @@ bool Skytraq::ConfigurePositionUpdateRate(uint8_t update_rate)
 bool Skytraq::QueryPositionUpdateRate() 
 {
     try {
-        QueryPositionUpdateRate query_position_update_rate;        
+        skytraq::QueryPositionUpdateRate query_position_update_rate;
         query_position_update_rate.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         query_position_update_rate.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         query_position_update_rate.header.payload_length = QUERY_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH;
@@ -746,7 +717,7 @@ bool Skytraq::QueryPositionUpdateRate()
         calculateCheckSum(msg_ptr+HEADER_LENGTH, QUERY_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH,
                           &query_position_update_rate.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+QUERY_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+QUERY_SYSTEM_POSITION_RATE_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::QueryPositionUpdateRate(): " << e.what();
@@ -763,7 +734,7 @@ bool Skytraq::ConfigureMessagesOutputRate(skytraq::BinaryOutputRate rate,
                                         skytraq::DisableEnable receiver_state_message, 
                                         skytraq::DisableEnable subframe_buffer_message) {
     try {
-        ConfigureBinaryOutputRate message;
+        skytraq::ConfigureBinaryOutputRate message;
         message.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         message.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         message.header.payload_length = CONFIGURE_BINARY_OUTPUT_RATE_PAYLOAD_LENGTH;
@@ -805,7 +776,7 @@ bool Skytraq::PollAlmanac(uint8_t prn)
             log_error_("Error in PollAlmanac(): Input prn outside of acceptable range.");
             return false;
         }
-        GetAlmanac get_almanac;        
+        skytraq::GetAlmanac get_almanac;
         get_almanac.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         get_almanac.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         get_almanac.header.payload_length = GET_ALMANAC_PAYLOAD_LENGTH;
@@ -818,7 +789,7 @@ bool Skytraq::PollAlmanac(uint8_t prn)
         calculateCheckSum(msg_ptr+HEADER_LENGTH, GET_ALMANAC_PAYLOAD_LENGTH,
                           &get_almanac.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+GET_ALMANAC_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+GET_ALMANAC_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::PollAlmanac(): " << e.what();
@@ -834,11 +805,11 @@ bool Skytraq::PollEphemeris(uint8_t prn)
             log_error_("Error in PollEphemeris(): Input prn outside of acceptable range.");
             return false;
         }
-        GetEphemeris get_ephemeris;        
+        skytraq::GetEphemeris get_ephemeris;
         get_ephemeris.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         get_ephemeris.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         get_ephemeris.header.payload_length = GET_EPHEMERIS_PAYLOAD_LENGTH;
-        get_ephemeris.message_id = get_ephemeris;
+        get_ephemeris.message_id = skytraq::GET_EPHEMERIS;
         get_ephemeris.prn = prn;
         get_ephemeris.footer.end1 = SKYTRAQ_END_BYTE_1;
         get_ephemeris.footer.end2 = SKYTRAQ_END_BYTE_2;
@@ -847,7 +818,7 @@ bool Skytraq::PollEphemeris(uint8_t prn)
         calculateCheckSum(msg_ptr+HEADER_LENGTH, GET_EPHEMERIS_PAYLOAD_LENGTH,
                           &get_ephemeris.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+GET_EPHEMERIS_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+GET_EPHEMERIS_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::PollEphemeris(): " << e.what();
@@ -860,27 +831,27 @@ bool Skytraq::SetEphemeris(uint16_t svid, skytraq::Subframe subframe1,
                             skytraq::Subframe subframe2, skytraq::Subframe subframe3)
 {
     try {
-        if((prn<0)||(prn>32)) {
+        if((svid<0)||(svid>32)) {
             log_error_("Error in PollEphemeris(): Input prn outside of acceptable range.");
             return false;
         }
-        GetEphemeris get_ephemeris;        
-        get_ephemeris.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
-        get_ephemeris.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
-        get_ephemeris.header.payload_length = EPHEMERIS_PAYLOAD_LENGTH;
-        get_ephemeris.message_id = GET_EPHEMERIS;
-        get_ephemeris.prn = svid;
-        get_ephemeris.subframe1 = subframe1;
-        get_ephemeris.subframe2 = subframe2;
-        get_ephemeris.subframe3 = subframe3;
-        get_ephemeris.footer.end1 = SKYTRAQ_END_BYTE_1;
-        get_ephemeris.footer.end2 = SKYTRAQ_END_BYTE_2;
+        skytraq::SetEphemeris set_ephemeris;
+        set_ephemeris.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
+        set_ephemeris.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
+        set_ephemeris.header.payload_length = EPHEMERIS_PAYLOAD_LENGTH;
+        set_ephemeris.message_id = skytraq::SET_EPHEMERIS;
+        set_ephemeris.svid = svid;
+        set_ephemeris.subframe1 = subframe1;
+        set_ephemeris.subframe2 = subframe2;
+        set_ephemeris.subframe3 = subframe3;
+        set_ephemeris.footer.end1 = SKYTRAQ_END_BYTE_1;
+        set_ephemeris.footer.end2 = SKYTRAQ_END_BYTE_2;
 
-        unsigned char* msg_ptr = (unsigned char*)&get_ephemeris;
-        calculateCheckSum(msg_ptr+HEADER_LENGTH, EPHEMERIS_PAYLOAD_LENGTH,
-                          &get_ephemeris.footer.checksum);
-        
-        return SendMessage(msg_ptr,HEADER_LENGTH+EPHEMERIS_PAYLOAD_LENGTH+FOOTERLENGTH);
+        uint8_t* msg_ptr = (uint8_t*)&set_ephemeris;
+
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, EPHEMERIS_PAYLOAD_LENGTH, &set_ephemeris.footer.checksum);
+
+        return SendMessage(msg_ptr,HEADER_LENGTH+EPHEMERIS_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::SetEphemeris(): " << e.what();
@@ -895,12 +866,12 @@ bool Skytraq::SetEphemerides(skytraq::Ephemerides ephemerides)
     try {
         bool sent_ephem [32];
         for (uint8_t prn_index = 1; prn_index <= 32; prn_index++) {
-            if (ephemerides.ephemeris[prn_index].header.payload_length == EPHEMERIS_PAYLOAD_LENGTH) {
+            if (ephemerides.ephemeris[prn_index].header.payload_length == GET_EPHEMERIS_PAYLOAD_LENGTH) {
                 uint8_t* msg_ptr = (uint8_t*) &ephemerides.ephemeris[prn_index];
-                calculateCheckSum(msg_ptr + HEADER_LENGTH, EPHEMERIS_PAYLOAD_LENGTH,
-                                    ephemerides.ephemeris[prn_index].footer.checksum);
+                calculateCheckSum(msg_ptr + HEADER_LENGTH, GET_EPHEMERIS_PAYLOAD_LENGTH,
+                                  &ephemerides.ephemeris[prn_index].footer.checksum);
                 sent_ephem[prn_index] = SendMessage(msg_ptr, HEADER_LENGTH
-                                                        +EPHEMERIS_PAYLOAD_LENGTH
+                                                        +GET_EPHEMERIS_PAYLOAD_LENGTH
                                                         +FOOTER_LENGTH);
 
             } else { // not a full ephemeris message
@@ -919,7 +890,7 @@ bool Skytraq::SetEphemerides(skytraq::Ephemerides ephemerides)
 bool Skytraq::EnableWAAS()
 {
     try {
-        ConfigureWAAS config_waas;        
+        skytraq::ConfigureWAAS config_waas;
         config_waas.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         config_waas.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         config_waas.header.payload_length = CONFIGURE_WAAS_PAYLOAD_LENGTH;
@@ -933,7 +904,7 @@ bool Skytraq::EnableWAAS()
         calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_WAAS_PAYLOAD_LENGTH,
                           &config_waas.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_WAAS_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_WAAS_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::EnableWAAS(): " << e.what();
@@ -945,7 +916,7 @@ bool Skytraq::EnableWAAS()
 bool Skytraq::DisableWAAS()
 {
     try {
-        ConfigureWAAS config_waas;        
+        skytraq::ConfigureWAAS config_waas;
         config_waas.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         config_waas.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         config_waas.header.payload_length = CONFIGURE_WAAS_PAYLOAD_LENGTH;
@@ -959,7 +930,7 @@ bool Skytraq::DisableWAAS()
         calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_WAAS_PAYLOAD_LENGTH,
                           &config_waas.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_WAAS_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_WAAS_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::DisableWAAS(): " << e.what();
@@ -971,7 +942,7 @@ bool Skytraq::DisableWAAS()
 bool Skytraq::QueryWAASConfiguration()
 {
     try {
-        QueryWAAS query_waas;        
+        skytraq::QueryWAAS query_waas;
         query_waas.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         query_waas.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         query_waas.header.payload_length = QUERY_WAAS_PAYLOAD_LENGTH;
@@ -983,7 +954,7 @@ bool Skytraq::QueryWAASConfiguration()
         calculateCheckSum(msg_ptr+HEADER_LENGTH, QUERY_WAAS_PAYLOAD_LENGTH,
                           &query_waas.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+QUERY_WAAS_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+QUERY_WAAS_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::QueryWAASConfiguration(): " << e.what();
@@ -995,7 +966,7 @@ bool Skytraq::QueryWAASConfiguration()
 bool Skytraq::SetCarNavigationMode()
 {
     try {
-        ConfigureNavigationMode configure_nav_mode;        
+        skytraq::ConfigureNavigationMode configure_nav_mode;
         configure_nav_mode.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         configure_nav_mode.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         configure_nav_mode.header.payload_length = CONFIGURE_NAVIGATION_MODE_PAYLOAD_LENGTH;
@@ -1009,7 +980,7 @@ bool Skytraq::SetCarNavigationMode()
         calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_NAVIGATION_MODE_PAYLOAD_LENGTH,
                           &configure_nav_mode.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_NAVIGATION_MODE_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_NAVIGATION_MODE_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::SetCarNavigationMode(): " << e.what();
@@ -1021,7 +992,7 @@ bool Skytraq::SetCarNavigationMode()
 bool Skytraq::SetPedestrianNavigationMode()
 {
     try {
-        ConfigureNavigationMode configure_nav_mode;        
+        skytraq::ConfigureNavigationMode configure_nav_mode;
         configure_nav_mode.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         configure_nav_mode.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         configure_nav_mode.header.payload_length = CONFIGURE_NAVIGATION_MODE_PAYLOAD_LENGTH;
@@ -1035,7 +1006,7 @@ bool Skytraq::SetPedestrianNavigationMode()
         calculateCheckSum(msg_ptr+HEADER_LENGTH, CONFIGURE_NAVIGATION_MODE_PAYLOAD_LENGTH,
                           &configure_nav_mode.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_NAVIGATION_MODE_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+CONFIGURE_NAVIGATION_MODE_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::SetCarNavigationMode(): " << e.what();
@@ -1047,7 +1018,7 @@ bool Skytraq::SetPedestrianNavigationMode()
 bool Skytraq::QueryNavigationMode()
 {
     try {
-        QueryNavigationMode query_nav_mode;        
+        skytraq::QueryNavigationMode query_nav_mode;
         query_nav_mode.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
         query_nav_mode.header.sync2 = SKYTRAQ_SYNC_BYTE_2;
         query_nav_mode.header.payload_length = QUERY_NAVIGATION_MODE_PAYLOAD_LENGTH;
@@ -1059,7 +1030,7 @@ bool Skytraq::QueryNavigationMode()
         calculateCheckSum(msg_ptr+HEADER_LENGTH, QUERY_NAVIGATION_MODE_PAYLOAD_LENGTH,
                           &query_nav_mode.footer.checksum);
         
-        return SendMessage(msg_ptr,HEADER_LENGTH+QUERY_NAVIGATION_MODE_PAYLOAD_LENGTH+FOOTERLENGTH);
+        return SendMessage(msg_ptr,HEADER_LENGTH+QUERY_NAVIGATION_MODE_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::QueryNavigationMode(): " << e.what();
@@ -1138,8 +1109,6 @@ void Skytraq::BufferIncomingData(uint8_t *msg, size_t length) {
 void Skytraq::ParseLog(uint8_t *log, size_t logID) {
 	try {
 		uint16_t payload_length;
-		uint8_t num_of_svs;
-		uint8_t num_of_channels;
 
 		switch (logID) {
 
@@ -1254,13 +1223,13 @@ void Skytraq::ParseLog(uint8_t *log, size_t logID) {
 		} // end switch (logID)
 	} catch (std::exception &e) {
 		std::stringstream output;
-		output << "Error parsing Skytraq log: " << e.what();
+		output << "Error Skytraq::ParseLog(): " << e.what();
 		log_error_(output.str());
 	}
 } // end ParseLog()
 
-void Skytraq::calculateCheckSum(uint8_t* in, size_t length, uint8_t* cs) {
-
+void Skytraq::calculateCheckSum(uint8_t* in, size_t length, uint8_t* cs) 
+{
 	try {
 		uint8_t sum = 0;
 		for (uint8_t i = 0; i < length; i++) {
@@ -1269,7 +1238,7 @@ void Skytraq::calculateCheckSum(uint8_t* in, size_t length, uint8_t* cs) {
         cs[0] = sum;
 	} catch (std::exception &e) {
 		std::stringstream output;
-		output << "Error calculating Skytraq checksum: " << e.what();
+		output << "Error in Skytraq::calculateCheckSum(): " << e.what();
 		log_error_(output.str());
 	}
 }
