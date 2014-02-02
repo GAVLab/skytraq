@@ -69,9 +69,9 @@ else(BUILD_WITH_ROS)
 
   if(serial_FOUND)
     include_directories(${serial_INCLUDE_DIRS})
-    list(APPEND UBLOX_LINK_LIBS ${serial_LIBRARIES})
+    list(APPEND SKYTRAQ_LINK_LIBS ${serial_LIBRARIES})
     if(UNIX AND NOT APPLE)
-        list(APPEND UBLOX_LINK_LIBS rt)
+        list(APPEND SKYTRAQ_LINK_LIBS rt)
     endif(UNIX AND NOT APPLE)
   else(serial_FOUND)
     message(FATAL_ERROR "Serial library was not found.")
@@ -107,21 +107,14 @@ else(BUILD_WITH_ROS)
 endif(BUILD_WITH_ROS)
 target_link_libraries(skytraq ${SKYTRAQ_LINK_LIBS})
 
-## Build the ROS wrapper
-
-if(BUILD_WITH_ROS)
-  rosbuild_add_executable(skytraq_node src/skytraq_node.cc)
-  target_link_libraries(skytraq_node skytraq)
-endif(BUILD_WITH_ROS)
-
 ## Build Examples
 # If asked to
-option(SKYTRAQ_BUILD_EXAMPLES off "Build skytraq examples.")
+SET (SKYTRAQ_BUILD_EXAMPLES TRUE CACHE BOOL "Build Skytraq Examples")
 IF(SKYTRAQ_BUILD_EXAMPLES)
     # Compile the skytraq Test program
-    add_executable(skytraq_example examples/skytraq_example.cpp)
+    add_executable(skytraq_ex examples/skytraq_ex.cpp)
     # Link the Test program to the skytraq library
-    target_link_libraries(skytraq_example skytraq ${SKYTRAQ_LINK_LIBS})
+    target_link_libraries(skytraq_ex skytraq ${SKYTRAQ_LINK_LIBS})
 ENDIF(SKYTRAQ_BUILD_EXAMPLES)
 
 ## Build tests
