@@ -18,6 +18,13 @@ inline void printHex(char *data, int length) {
     printf("\n");
 }
 
+inline void printHex(unsigned char *data, int length) {
+    for (int i = 0; i < length; ++i) {
+        printf("0x%.2X ", data[i]);
+    }
+    printf("\n");
+}
+
 /*!
  * Default callback method for time stamping data.  Used if a
  * user callback is not set.  Returns the current time from the
@@ -50,61 +57,61 @@ inline void DefaultErrorMsgCallback(const std::string &msg) {
 
 //! System Output Message Default Callbacks
 inline void DefaultSoftwareVersionCallback(skytraq::SoftwareVersion& software_version, double& timestamp){
-
+    std::cout << "Software Version message received. " << std::endl;
 }
 
 inline void DefaultSoftwareCrcCallback(skytraq::SoftwareCRC& software_crc, double& timestamp){
-
+    std::cout << "Software CRC message received. " << std::endl;
 }
 
 inline void DefaultAckCallback(skytraq::Ack& ack, double& timestamp){
-
+    std::cout << "Ack message received. " << std::endl;
 }
 
 inline void DefaultNackCallback(skytraq::Nack& nack, double& timestamp){
-
+    std::cout << "Nack message received. " << std::endl;
 }
 
 inline void DefaultPosUpdateRateCallback(skytraq::PositionUpdateRate& pos_update_rate, double& timestamp){
-
+    std::cout << "Position Update Rate message received. " << std::endl;
 }
 
 
 //! GPS Output Message Default Callbacks
 inline void DefaultWaasStatusCallback(skytraq::WaasStatus& waas_status, double& timestamp){
-
+    std::cout << "WAAS Status message received. " << std::endl;
 }
 
 inline void DefaultNavigationModeCallback(skytraq::NavigationMode& nav_mode, double& timestamp){
-
+    std::cout << "Navigation Mode message received. " << std::endl;
 }
 
 inline void DefaultAlmanacCallback(skytraq::Almanac& almanac, double& timestamp){
-
+    std::cout << "Almanac message received. " << std::endl;
 }
 
 inline void DefaultEphemerisCallback(skytraq::Ephemeris& ephemeris, double& timestamp){
-
+    std::cout << "Ephemeris message received. " << std::endl;
 }
 
 inline void DefaultMeasurementTimeCallback(skytraq::MeasurementTime& measurement_time, double& timestamp){
-
+    std::cout << "Measurement Time message received. " << std::endl;
 }
 
 inline void DefaultRawMeasurementCallback(skytraq::RawMeasurements& raw_measurements, double& timestamp){
-
+    std::cout << "Raw Measurements message received. " << std::endl;
 }
 
 inline void DefaultChannelStatusCallback(skytraq::ChannelStatus& channel_status, double& timestamp){
-
+    std::cout << "Channel Status message received. " << std::endl;
 }
 
 inline void DefaultNavStatusCallback(skytraq::ReceiverNavStatus& nav_status, double& timestamp){
-
+    std::cout << "Nav Status message received. " << std::endl;
 }
 
 inline void DefaultSubframeBufferDataCallback(skytraq::SubframeBufferData& subframe_buffer_data, double& timestamp){
-
+    std::cout << "Subframe Buffer Data message received. " << std::endl;
 }
 
 
@@ -150,8 +157,9 @@ Skytraq::~Skytraq() {
 
 bool Skytraq::Connect(std::string port, int baudrate) {
     //serial_port_ = new serial::Serial(port,baudrate,serial::Timeout::simpleTimeout(1000));
-    serial::Timeout my_timeout(100, 1000, 0, 1000, 0);
     try {
+        serial::Timeout my_timeout(100, 1000, 0, 1000, 0);
+    
         serial_port_ = new serial::Serial(port, baudrate, my_timeout);
 
 
@@ -173,7 +181,8 @@ bool Skytraq::Connect(std::string port, int baudrate) {
 		serial_port_->flush();
 
 		// look for GPS by sending ping and waiting for response
-		if (!Ping()) {
+        if (false) {
+//		if (!Ping()) {
 			std::stringstream output;
 			output << "Skytraq GPS not found on port: " << port << std::endl;
 			log_error_(output.str());
@@ -183,6 +192,11 @@ bool Skytraq::Connect(std::string port, int baudrate) {
 			return false;
 		}
 
+        // start reading
+        cout << "Before entering StartReading().";
+        StartReading();
+        is_connected_ = true;
+        return true;
 
     } catch (std::exception e) {
            std::stringstream output;
@@ -192,12 +206,6 @@ bool Skytraq::Connect(std::string port, int baudrate) {
            is_connected_ = false;
            return false;
        }
-
-    // start reading
-    StartReading();
-    is_connected_ = true;
-    return true;
-
 }
 
 bool Skytraq::Ping(int num_attempts) {
@@ -213,8 +221,8 @@ bool Skytraq::Ping(int num_attempts) {
             size_t bytes_read;
             bytes_read = serial_port_->read(result, 5000);
 
-            //std::cout << "bytes read: " << (int)bytes_read << std::endl;
-            //std::cout << dec << result << std::endl;
+            std::cout << "bytes read: " << (int)bytes_read << std::endl;
+            printHex(result,bytes_read);
 
             if (bytes_read < (HEADER_LENGTH+SOFTWARE_VERSION_PAYLOAD_LENGTH+FOOTER_LENGTH)) {
                 stringstream output;
@@ -246,8 +254,8 @@ bool Skytraq::Ping(int num_attempts) {
             output << "Read " << bytes_read
                << " bytes, but version message not found.";
             log_debug_(output.str());
-            return false;
         }
+        return false;
     } catch (exception &e) {
         std::stringstream output1;
         output1 << "Error pinging receiver: " << e.what();
@@ -277,10 +285,12 @@ void Skytraq::Disconnect() {
 
 void Skytraq::StartReading() {
 	try {
+        cout << "In StartReading()." << endl;
 		// create thread to read from sensor
 		reading_status_ = true;
 		read_thread_ptr_ = boost::shared_ptr<boost::thread>(
 				new boost::thread(boost::bind(&Skytraq::ReadSerialPort, this)));
+        cout << "End of StartReading()" << endl;
 	} catch (std::exception &e) {
 		std::stringstream output;
 		output << "Error starting Skytraq read thread: " << e.what();
@@ -301,6 +311,10 @@ void Skytraq::ReadSerialPort() {
         // read data
         try {
             len = serial_port_->read(buffer, MAX_NOUT_SIZE);
+            // timestamp the read
+            read_timestamp_ = time_handler_();
+            // add data to the buffer to be parsed
+            BufferIncomingData(buffer, len);
         } catch (exception &e) {
             stringstream output;
             output << "Error reading serial port: " << e.what();
@@ -308,12 +322,7 @@ void Skytraq::ReadSerialPort() {
             Disconnect();
             return;
         }
-        // timestamp the read
-        read_timestamp_ = time_handler_();
-        // add data to the buffer to be parsed
-        BufferIncomingData(buffer, len);
     }
-
 }
 
 // Send Message
@@ -1044,11 +1053,10 @@ bool Skytraq::QueryNavigationMode()
 //
 //////////////////////////////////////////////////////////////
 void Skytraq::BufferIncomingData(uint8_t *msg, size_t length) {
-    //cout << length << endl;
+//    cout << length << endl;
     //cout << 0 << ": " << dec << (int)msg[0] << endl;
     // add incoming data to buffer
-
-    //printHex(reinterpret_cast<char*>(msg),length);
+//    printHex(reinterpret_cast<char*>(msg),length);
 	try {
 
 		for (unsigned int i = 0; i < length; i++) {
@@ -1060,17 +1068,19 @@ void Skytraq::BufferIncomingData(uint8_t *msg, size_t length) {
 						"Overflowed receiver buffer. See Skytraq::BufferIncomingData()");
 
 			}
-			//cout << "buffer_index_ = " << buffer_index_ << endl;
+//            cout << "buffer_index_ = " << buffer_index_ << endl;
 
 			if (buffer_index_ == 0) {	// looking for beginning of message
 				if (msg[i] == SKYTRAQ_SYNC_BYTE_1) {	// beginning of msg found - add to buffer
-										//cout << "got first bit" << endl;
+//                    cout << "got first bit" << endl;
+//                    std::cout << hex << (int)msg[i] << dec << std::endl;
 					data_buffer_[buffer_index_++] = msg[i];
 				}	// end if (msg[i]
 			} 
             else if (buffer_index_ == 1) {	// verify 2nd character of header
 				if (msg[i] == SKYTRAQ_SYNC_BYTE_2) {	// 2nd byte ok - add to buffer
-										//cout << " got second synch bit" << endl;
+//                    cout << " got second synch bit" << endl;
+//                    std::cout << hex << (int)msg[i] << dec << std::endl;
 					data_buffer_[buffer_index_++] = msg[i];
 				} else {
 					// start looking for new message again
@@ -1084,66 +1094,65 @@ void Skytraq::BufferIncomingData(uint8_t *msg, size_t length) {
 				data_buffer_[buffer_index_++] = msg[i];
 				//printHex(reinterpret_cast < char * > (data_buffer_),4);
 				msgID = data_buffer_[buffer_index_ - 1];
-				//cout << "msgID = " << msgID << endl;
+//                cout << "msgID = " << msgID << endl;
 			} 
             else if ((msg[i-1]==SKYTRAQ_END_BYTE_1)&&(msg[i]==SKYTRAQ_END_BYTE_2)) {
-				data_buffer_[buffer_index_++] = msg[i];
-				//std::cout << hex << (int)msg[i] << dec << std::endl;
-				//cout << " msgID = " << msgID << std::endl;
+                data_buffer_[buffer_index_] = msg[i];
+//                std::cout << hex << (int)msg[i] << dec << std::endl;
+//                cout << " msgID = " << msgID << std::endl;
 				ParseLog(data_buffer_, msgID);
 				// reset counters
 				buffer_index_ = 0;
-				//cout << "Message Done." << std::endl;
+//                cout << "Message Done." << std::endl;
 			}
 			else {	// add data to buffer
 				data_buffer_[buffer_index_++] = msg[i];
+//                std::cout << hex << (int)msg[i] << dec << std::endl;
 			}
 		}	// end for
 	} catch (std::exception &e) {
 		std::stringstream output;
 		output << "Error buffering incoming Skytraq data: " << e.what();
 		log_error_(output.str());
+        buffer_index_ = 0;
 	}
 }
 
 void Skytraq::ParseLog(uint8_t *log, size_t logID) {
 	try {
 		uint16_t payload_length;
-
+//        cout << "In ParseLog()." << endl;
+        payload_length = (((uint16_t) *(log+2)) << 8) + ((uint16_t) *(log+3));
+        cout << "payload length: " << (double)payload_length << endl;
 		switch (logID) {
 
         //! Output System Messages
 		case SOFTWARE_VERSION: // Receiver outputs if accurate internally stored pos and time aren't available
-			SoftwareVersion cur_software_version;
-            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            skytraq::SoftwareVersion cur_software_version;
             memcpy(&cur_software_version, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
             if(software_version_callback_)
                 software_version_callback_(cur_software_version,read_timestamp_);
 			break;
         case SOFTWARE_CRC:
-            SoftwareCRC cur_software_crc;
-            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            skytraq::SoftwareCRC cur_software_crc;
             memcpy(&cur_software_crc, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
             if(software_crc_callback_)
                 software_crc_callback_(cur_software_crc,read_timestamp_);
             break;
         case ACK:
-            Ack cur_ack;
-            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            skytraq::Ack cur_ack;
             memcpy(&cur_ack, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
             if(ack_callback_)
                 ack_callback_(cur_ack,read_timestamp_);
             break;
         case NACK:
-            Nack cur_nack;
-            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            skytraq::Nack cur_nack;
             memcpy(&cur_nack, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
             if(nack_callback_)
                 nack_callback_(cur_nack,read_timestamp_);
             break;
         case POS_UPDATE_RATE:
-            PositionUpdateRate cur_pos_update_rate;
-            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            skytraq::PositionUpdateRate cur_pos_update_rate;
             memcpy(&cur_pos_update_rate, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
             if(pos_update_rate_callback_)
                 pos_update_rate_callback_(cur_pos_update_rate,read_timestamp_);
@@ -1151,43 +1160,37 @@ void Skytraq::ParseLog(uint8_t *log, size_t logID) {
 
         //! Output GPS Messages
         case GPS_WAAS_STATUS:
-            WaasStatus cur_waas_status;
-            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            skytraq::WaasStatus cur_waas_status;
             memcpy(&cur_waas_status, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
             if(waas_status_callback_)
                 waas_status_callback_(cur_waas_status,read_timestamp_);
             break;
         case GPS_NAV_MODE:
-            NavigationMode cur_nav_mode;
-            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            skytraq::NavigationMode cur_nav_mode;
             memcpy(&cur_nav_mode, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
             if(nav_mode_callback_)
                 nav_mode_callback_(cur_nav_mode,read_timestamp_);
             break;
         case GPS_ALMANAC:
-            Almanac cur_almanac;
-            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            skytraq::Almanac cur_almanac;
             memcpy(&cur_almanac, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
             if(almanac_callback_)
                 almanac_callback_(cur_almanac,read_timestamp_);
             break;
         case GPS_EPHEMERIS:
-            Ephemeris cur_ephemeris;
-            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            skytraq::Ephemeris cur_ephemeris;
             memcpy(&cur_ephemeris, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
             if(ephemeris_callback_)
                 ephemeris_callback_(cur_ephemeris,read_timestamp_);
             break;
         case MEAS_TIME:
-            MeasurementTime cur_measurement_time;
-            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            skytraq::MeasurementTime cur_measurement_time;
             memcpy(&cur_measurement_time, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
             if(measurement_time_callback_)
                 measurement_time_callback_(cur_measurement_time,read_timestamp_);
             break;
         case RAW_MEAS:
-            RawMeasurements cur_raw_measurements;
-            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            skytraq::RawMeasurements cur_raw_measurements;
             // Copy header and payload
             memcpy(&cur_raw_measurements, log, payload_length+HEADER_LENGTH);
             //Copy Footer
@@ -1196,8 +1199,7 @@ void Skytraq::ParseLog(uint8_t *log, size_t logID) {
                 raw_measurement_callback_(cur_raw_measurements,read_timestamp_);
             break;
         case SV_CH_STATUS:
-            ChannelStatus cur_channel_status;
-            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            skytraq::ChannelStatus cur_channel_status;
             // Copy header and payload
             memcpy(&cur_channel_status, log, payload_length+HEADER_LENGTH);
             //Copy Footer
@@ -1206,15 +1208,13 @@ void Skytraq::ParseLog(uint8_t *log, size_t logID) {
                 channel_status_callback_(cur_channel_status,read_timestamp_);
             break;
         case RCV_STATE:
-            ReceiverNavStatus cur_reciever_status;
-            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            skytraq::ReceiverNavStatus cur_reciever_status;
             memcpy(&cur_reciever_status, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
             if(receiver_nav_status_callback_)
                 receiver_nav_status_callback_(cur_reciever_status,read_timestamp_);
             break;
         case SUBFRAME:
-            SubframeBufferData cur_subframe_buffer_data;
-            payload_length = (((uint16_t) *(log+4)) << 8) + ((uint16_t) *(log+3));
+            skytraq::SubframeBufferData cur_subframe_buffer_data;
             memcpy(&cur_subframe_buffer_data, log, payload_length+HEADER_LENGTH+FOOTER_LENGTH);
             if(subframe_buffer_data_callback_)
                 subframe_buffer_data_callback_(cur_subframe_buffer_data,read_timestamp_);
