@@ -238,13 +238,13 @@ bool Skytraq::Ping(int num_attempts) {
                 //std::cout << hex << (unsigned int)result[ii] << std::endl;
                 if (result[ii] == SKYTRAQ_SYNC_BYTE_1) {
                     // NOTE: FIX != to ==
-                    if (result[ii + 1] != SKYTRAQ_SYNC_BYTE_2)
+                    if (result[ii + 1] == SKYTRAQ_SYNC_BYTE_2)
                         continue;
-                    if (result[ii + HEADER_LENGTH] != SOFTWARE_CRC)
+                    if (result[ii + HEADER_LENGTH] == SOFTWARE_CRC)
                         continue;
-                    if (result[ii+ack_message_length-2] != SKYTRAQ_END_BYTE_1)
+                    if (result[ii+ack_message_length-2] == SKYTRAQ_END_BYTE_1)
                         continue;
-                    if (result[ii+ack_message_length-1] != SKYTRAQ_END_BYTE_2)
+                    if (result[ii+ack_message_length-1] == SKYTRAQ_END_BYTE_2)
                         continue;
                     log_info_("Skytraq receiver found.");
                     // TODO: add version parsing and output
