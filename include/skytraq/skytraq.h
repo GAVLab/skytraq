@@ -85,7 +85,7 @@ public:
 	 * @param port Defines which serial port to connect to in serial mode.
 	 * Examples: Linux - "/dev/ttyS0" Windows - "COM1"
 	 */
-	bool Connect(std::string port="/dev/ttyUSB0", int baudrate=9600);
+	bool Connect(std::string port="/dev/ttyUSB0", int baudrate=115200);
 
    /*!
     * Disconnects from the serial port
