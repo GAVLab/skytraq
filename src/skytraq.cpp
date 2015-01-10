@@ -510,6 +510,7 @@ bool Skytraq::RestoreFactoryDefaults()
 
 bool Skytraq::ConfigureSerialPort(uint8_t com_port, uint8_t baudrate) 
 {
+    // NOTE: Probably need to reconnect to serial port after changing baudrate
     try {
         skytraq::ConfigureSerialPort configure_serial_port;
         configure_serial_port.header.sync1 = SKYTRAQ_SYNC_BYTE_1;
@@ -517,7 +518,22 @@ bool Skytraq::ConfigureSerialPort(uint8_t com_port, uint8_t baudrate)
         configure_serial_port.header.payload_length = CONFIGURE_SERIAL_PORT_PAYLOAD_LENGTH;
         configure_serial_port.message_id = SET_FACTORY_DEFAULTS;
         configure_serial_port.com_port = com_port;
-        configure_serial_port.baudrate = baudrate;
+        if(baudrate == 4800) {
+            configure_serial_port.baudrate = 0;
+        } else if(baudrate == 9600) {
+            configure_serial_port.baudrate = 1;
+        } else if(baudrate == 19200) {
+            configure_serial_port.baudrate = 2;
+        } else if(baudrate == 38400) {
+            configure_serial_port.baudrate = 3;
+        } else if(baudrate == 57600) {
+            configure_serial_port.baudrate = 4;
+        } else if(baudrate == 115200) {
+            configure_serial_port.baudrate = 5;
+        } else { // else baudrate not valid option, default to 115200
+            configure_serial_port.baudrate = 5;
+            log_info_("Invalid baudrate given. Defaulting to 115200.");
+        }
         configure_serial_port.attributes = UPDATE_TO_SRAM_AND_FLASH;
         configure_serial_port.footer.end1 = SKYTRAQ_END_BYTE_1;
         configure_serial_port.footer.end2 = SKYTRAQ_END_BYTE_2;

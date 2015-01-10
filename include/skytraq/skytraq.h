@@ -140,7 +140,7 @@ public:
     bool QuerySoftwareVersion();
     bool QuerySoftwareCrcVersion();
     bool RestoreFactoryDefaults();
-    bool ConfigureSerialPort(uint8_t com_port, uint8_t baudrate=115200);
+    bool ConfigureSerialPort(uint8_t com_port, uint8_t baudrate=5); // 5=115200
     bool ConfigureNmeaIntervals(uint8_t gga_interval=0, uint8_t gsa_interval=0, 
                                     uint8_t gsv_interval=0, uint8_t gll_interval=0, 
                                     uint8_t rcm_interval=0, uint8_t vtg_interval=0, 
