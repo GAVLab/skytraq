@@ -18,6 +18,7 @@ The skytraq library can be installed by:
   
     git clone git://github.com/chris5108/skytraq.git
     cd skytraq
+    cmake ./
     make
     sudo make install
     
