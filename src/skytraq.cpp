@@ -852,12 +852,27 @@ bool Skytraq::PollEphemeris(uint8_t prn)
     }
 }
 
+bool Skytraq::SetEphemeris(skytraq::SetEphemeris set_ephemeris)
+{
+    try {
+
+        uint8_t* msg_ptr = (uint8_t*)&set_ephemeris;
+        calculateCheckSum(msg_ptr+HEADER_LENGTH, EPHEMERIS_PAYLOAD_LENGTH, &set_ephemeris.footer.checksum);
+        return SendMessage(msg_ptr,HEADER_LENGTH+EPHEMERIS_PAYLOAD_LENGTH+FOOTER_LENGTH);
+
+    } catch (std::exception &e) {
+        std::stringstream output;
+        output << "Error in Skytraq::SetEphemeris(): " << e.what();
+        log_error_(output.str());
+        return false;
+    }
+}
 bool Skytraq::SetEphemeris(uint16_t svid, skytraq::Subframe subframe1, 
                             skytraq::Subframe subframe2, skytraq::Subframe subframe3)
 {
     try {
         if((svid<0)||(svid>32)) {
-            log_error_("Error in PollEphemeris(): Input prn outside of acceptable range.");
+            log_error_("Error in SetEphemeris(): Input prn outside of acceptable range.");
             return false;
         }
         skytraq::SetEphemeris set_ephemeris;
@@ -872,11 +887,8 @@ bool Skytraq::SetEphemeris(uint16_t svid, skytraq::Subframe subframe1,
         set_ephemeris.footer.end1 = SKYTRAQ_END_BYTE_1;
         set_ephemeris.footer.end2 = SKYTRAQ_END_BYTE_2;
 
-        uint8_t* msg_ptr = (uint8_t*)&set_ephemeris;
+        return SetEphemeris(set_ephemeris);
 
-        calculateCheckSum(msg_ptr+HEADER_LENGTH, EPHEMERIS_PAYLOAD_LENGTH, &set_ephemeris.footer.checksum);
-
-        return SendMessage(msg_ptr,HEADER_LENGTH+EPHEMERIS_PAYLOAD_LENGTH+FOOTER_LENGTH);
     } catch (std::exception &e) {
         std::stringstream output;
         output << "Error in Skytraq::SetEphemeris(): " << e.what();
@@ -889,16 +901,15 @@ bool Skytraq::SetEphemeris(uint16_t svid, skytraq::Subframe subframe1,
 bool Skytraq::SetEphemerides(skytraq::Ephemerides ephemerides)
 {
     try {
-        bool sent_ephem [32];
+        bool sent_ephem = false;
         for (uint8_t prn_index = 1; prn_index <= 32; prn_index++) {
             if (ephemerides.ephemeris[prn_index].header.payload_length == GET_EPHEMERIS_PAYLOAD_LENGTH) {
-                uint8_t* msg_ptr = (uint8_t*) &ephemerides.ephemeris[prn_index];
-                calculateCheckSum(msg_ptr + HEADER_LENGTH, GET_EPHEMERIS_PAYLOAD_LENGTH,
-                                  &ephemerides.ephemeris[prn_index].footer.checksum);
-                sent_ephem[prn_index] = SendMessage(msg_ptr, HEADER_LENGTH
-                                                        +GET_EPHEMERIS_PAYLOAD_LENGTH
-                                                        +FOOTER_LENGTH);
+                sent_ephem = SetEphemeris(ephemerides.ephemeris[prn_index]);
+                if(sent_ephem == true) { // sent ephemeris for this prn
 
+                } else { // else didn't send ephemeris for this prn
+
+                }
             } else { // not a full ephemeris message
                 
             }
