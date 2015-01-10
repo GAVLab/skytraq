@@ -6,8 +6,8 @@
 
 namespace skytraq {
 
-#define MAX_NOUT_SIZE      (5000)   // Maximum size of a NovAtel log buffer (ALMANAC logs are big!)
 #define MAXCHAN		66  // Maximum number of signal channels + 1
+#define MAX_NOUT_SIZE      MAXCHAN*23+3   // Maximum size of a Skytraq log buffer (RAW_MEAS message)
 #define MAX_SAT     33  // maximum number of prns+1
 
 // define macro to pack structures correctly with both GCC and MSVC compilers
