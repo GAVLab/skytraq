@@ -176,7 +176,7 @@ PACK(
         uint8_t message_id;
         uint8_t com_port;
         uint8_t baudrate;
-            //!< 4800, 9600, 19200, 38400, 57600, 115200
+            //!< 0:4800, 1:9600, 2:19200, 3:38400, 4:57600, 5:115200
         Attributes attributes;
         SkytraqFooter footer;
     }
