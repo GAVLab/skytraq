@@ -71,8 +71,7 @@ PACK(
         uint8_t sync1;   //!< start of packet first byte (0xA0)
         uint8_t sync2;   //!< start of packet second byte (0xA1)
         uint16_t payload_length; //!< length of the payload data
-    }
-);
+});
 
 PACK(
     struct SkytraqFooter 
@@ -80,8 +79,7 @@ PACK(
         uint8_t checksum;
         uint8_t end1;
         uint8_t end2;
-    }
-);
+});
 
 /*!
  * ------------------------------------------
@@ -127,8 +125,7 @@ PACK(
         int16_t longitude;      //!< -18000 to 18000 (>0 East Hem, <0 West Hem) [1/100 deg]
         int16_t altitude;       //!< -1000 to 18300 [m]
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x02) Query Software Version
 enum SoftwareType {
@@ -142,8 +139,7 @@ PACK(
         uint8_t message_id;
         SoftwareType software_type;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x03) Query Software CRC
 PACK(
@@ -153,8 +149,7 @@ PACK(
         uint8_t message_id;
         SoftwareType software_type;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x04) Set to Factory Defaults
 PACK(
@@ -164,8 +159,7 @@ PACK(
         uint8_t message_id;
         uint8_t type;           //!< = 0x01
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x05) Configure Serial Port
 PACK(
@@ -179,8 +173,7 @@ PACK(
             //!< 0:4800, 1:9600, 2:19200, 3:38400, 4:57600, 5:115200
         Attributes attributes;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x08) Configure NMEA Message Intervals
 PACK(
@@ -198,8 +191,7 @@ PACK(
             //!< All intervals: 0-255 sec, 0=disable
         Attributes attributes;              
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x09) Configure Output Message Format
 enum OutputType {
@@ -215,8 +207,7 @@ PACK(
         OutputType type;
         Attributes attributes;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x0C) Configure Power Mode
 PACK(
@@ -227,8 +218,7 @@ PACK(
         DisableEnable power_save_mode;
         Attributes attributes;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0xE) Configure System Position Update Rate
 PACK(
@@ -239,8 +229,7 @@ PACK(
         uint8_t update_rate;
         Attributes attributes;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x10) Query Position Update Rate
 PACK(
@@ -249,8 +238,7 @@ PACK(
         SkytraqHeader header;
         uint8_t message_id;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x12) Configure Binary Measurement Output Rate
 enum BinaryOutputRate {
@@ -274,8 +262,7 @@ PACK(
         DisableEnable subframe;                 //!< GPS Output Message (0xEO)
         Attributes attributes;
         SkytraqFooter footer;
-    }
-);
+});
 
 /*!
  * ------------------------------------------
@@ -291,8 +278,7 @@ PACK(
         uint8_t message_id;     //!< Message ID
         uint8_t prn;            //!< (0 = all SVs),(1-32 = specific SV)
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x30) Get Ephemeris
 PACK(
@@ -302,22 +288,19 @@ PACK(
         uint8_t message_id;     //!< Message ID
         uint8_t prn;            //!< (0 = all SVs),(1-32 = specific SV)
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x31) Set Ephemeris
 PACK(
     struct Word
     {
         uint8_t byte[3];            //!< Bit 1-24 (MSB->LSB)
-    }
-);
+});
 PACK(
     struct Subframe
     {
         Word word[9];       //!< (TLM Word is not included)
-    }
-);
+});
 PACK(
     struct SetEphemeris
     {
@@ -328,14 +311,12 @@ PACK(
         Subframe subframe2;
         Subframe subframe3;
         SkytraqFooter footer;
-    }
-);
+});
 PACK(
     struct Ephemerides
     {
         SetEphemeris ephemeris[MAX_SAT];
-    }
-);
+});
 //! (0x37) Configure WAAS
 PACK(
     struct ConfigureWAAS
@@ -345,8 +326,7 @@ PACK(
         DisableEnable enable_waas;
         Attributes attributes;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x38) Query WAAS Status
 PACK(
@@ -355,8 +335,7 @@ PACK(
         SkytraqHeader header;
         uint8_t message_id;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x3c) Configure Navigation Mode
 enum NavMode {
@@ -371,8 +350,7 @@ PACK(
         NavMode nav_mode;
         Attributes attributes;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x3d) Query Navigation Mode
 PACK(
@@ -381,8 +359,7 @@ PACK(
         SkytraqHeader header;
         uint8_t message_id;
         SkytraqFooter footer;
-    }
-);
+});
 
 /*!
  * ------------------------------------------
@@ -400,8 +377,7 @@ PACK(
         uint32_t odm_version;
         uint32_t revision;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0X81) Software CRC
 PACK(
@@ -412,8 +388,7 @@ PACK(
         uint8_t software_type;
         uint16_t crc_value;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x83) ACK
 PACK(
@@ -422,8 +397,7 @@ PACK(
         SkytraqHeader header;
         uint8_t message_id;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x84) NACK
 PACK(
@@ -432,8 +406,7 @@ PACK(
         SkytraqHeader header;
         uint8_t message_id;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x86) Position Update Rate
 PACK(
@@ -443,8 +416,7 @@ PACK(
         uint8_t message_id;
         uint8_t update_rate; //!< [Hz]
         SkytraqFooter footer;
-    }
-);
+});
 
 /*!
  * ------------------------------------------
@@ -460,8 +432,7 @@ PACK(
         uint8_t message_id;
         DisableEnable waas_status;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0xB5) Navigation Mode
 PACK(
@@ -471,8 +442,7 @@ PACK(
         uint8_t message_id;
         NavMode nav_mode;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0x87) Almanac (polled message response)
 PACK(
@@ -491,8 +461,7 @@ PACK(
         Word word10;
         int16_t issue_week;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0xB1) Ephemeris (polled message response)
 PACK(
@@ -506,8 +475,7 @@ PACK(
         Subframe subframe2;
         Subframe subframe3;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0xDC) Measurement time info (periodic message)
     // Contains time information on when the raw GPS 
@@ -522,8 +490,7 @@ PACK(
         uint32_t time_of_week;      //!< (0-604799999) [ms]
         uint16_t measurement_period;//!< (1-1000) [ms]
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0xDD) Raw Measurements (periodic message)
     // payload length = 3+23*N
@@ -542,8 +509,7 @@ PACK(
             // Bit 2 ON = Carrier phase available
             // Bit 3 ON = Cycle slip possible
             // Bit 4 ON = Coherent integration time >= 10 ms
-    }
-);
+});
 PACK(
     struct RawMeasurements
     {
@@ -553,8 +519,7 @@ PACK(
         uint8_t number_of_measurements;
         ChannelMeasurements channel_measurements[MAXCHAN];
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0xDE) SV and Channel status info (peiodic message)
 PACK(
@@ -575,8 +540,7 @@ PACK(
                                             //!< bit 3 ON: Ephemeris received
                                             //!< bit 4 ON: Used in normal fix mode
                                             //!< bit 5 ON: Used in differential fix mode
-    }
-);
+});
 
 PACK(
     struct ChannelStatus
@@ -587,8 +551,7 @@ PACK(
         uint8_t number_of_svs;              
         ChannelInfo channel_info[MAXCHAN];  
         SkytraqFooter footer;
-    }
-);
+});
 
 
 //! (0xDF) Receiver Navigation Statues (periodic message)
@@ -624,8 +587,7 @@ PACK(
         float vdop;
         float tdop;
         SkytraqFooter footer;
-    }
-);
+});
 
 //! (0xE0) Subframe Buffer Data (periodic message)
 PACK(
@@ -646,8 +608,7 @@ PACK(
         Word word9;
         Word word10;
         SkytraqFooter footer;
-    }
-);
+    });
 
 //! Skytraq Protocol Class/Message ID's
 enum Message_ID
