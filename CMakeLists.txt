@@ -109,12 +109,13 @@ target_link_libraries(skytraq ${SKYTRAQ_LINK_LIBS})
 
 ## Build Examples
 # If asked to
-SET (SKYTRAQ_BUILD_EXAMPLES TRUE CACHE BOOL "Build Skytraq Examples")
+option(SKYTRAQ_BUILD_EXAMPLES "Build Skytraq examples?" OFF)
+
 IF(SKYTRAQ_BUILD_EXAMPLES)
     # Compile the skytraq Test program
-    add_executable(skytraq_ex examples/skytraq_ex.cpp)
+    #add_executable(skytraq_ex examples/skytraq_ex.cpp)
     # Link the Test program to the skytraq library
-    target_link_libraries(skytraq_ex skytraq ${SKYTRAQ_LINK_LIBS})
+    #target_link_libraries(skytraq_ex skytraq ${SKYTRAQ_LINK_LIBS})
 ENDIF(SKYTRAQ_BUILD_EXAMPLES)
 
 ## Build tests
