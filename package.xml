@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package>
+  <name>skytraq</name>
+  <version>1.0.0</version>
+  <description>Interface to Skytraq GPS receiver.</description>
+
+  <maintainer email="chris.collins@is4s.com">Chris Collins</maintainer>
+  
+  <license>MIT</license>
+
+  <url type="website">https://github.com/GAVLab/skytraq</url>
+
+  <author email="chris.collins@is4s.com">Chris Collins</author>
+
+  <buildtool_depend>catkin</buildtool_depend>
+  <run_depend>serial</run_depend>
+  <build_depend>serial</build_depend>
+  
+</package>
